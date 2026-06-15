@@ -34,6 +34,18 @@ BEGIN
   END IF;
 END $$;
 
+-- 3. CRIAR BUCKET documents para upload de fotos/documentos
+INSERT INTO storage.buckets (id, name, public) VALUES ('documents', 'documents', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Policy: usuarios podem ler documentos
+CREATE POLICY "Usuarios podem ler documentos" ON storage.objects
+  FOR SELECT USING (bucket_id = 'documents' AND auth.role() = 'authenticated');
+
+-- Policy: usuarios podem enviar documentos
+CREATE POLICY "Usuarios podem enviar documentos" ON storage.objects
+  FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.role() = 'authenticated');
+
 -- Credenciais Admin:
 -- URL: https://contadtv169-stack.github.io/44taxi/#/admin/login
 -- Email: admin@44taxi.com
