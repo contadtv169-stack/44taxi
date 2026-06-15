@@ -98,6 +98,7 @@ export default function Profile() {
           { icon: '🚗', label: 'Historico de Corridas', path: '/rides' },
           { icon: '🍔', label: 'Meus Pedidos', path: '/food' },
           { icon: '💰', label: 'Meus Ganhos', path: '/earnings' },
+          { icon: '🎁', label: 'Cupons', path: '/coupons' },
         ].map((item, i) => (
           <div key={i} className="flex items-center justify-between" style={{ padding: '12px 0', cursor: 'pointer', borderBottom: i < 2 ? '1px solid var(--gray-100)' : 'none' }} onClick={() => navigate(item.path)}>
             <div className="flex items-center gap-12">
