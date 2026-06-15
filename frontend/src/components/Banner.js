@@ -14,14 +14,14 @@ const banners = {
     gradient: 'linear-gradient(135deg, #dc2626, #2563eb)',
   },
   driver: {
-    title: 'SejaMotorista 44Taxi',
-    subtitle: 'Ganhe até R$ 3.500 por semana',
+    title: 'Vem ser parceiro!',
+    subtitle: 'Motorista 44Taxi - Ganhe até R$ 3.500/semana',
     emoji: '🚗',
     gradient: 'linear-gradient(135deg, #059669, #2563eb)',
   },
   partner: {
-    title: 'Seja parceiro',
-    subtitle: 'Cadastre seu restaurante',
+    title: 'Vem ser parceiro!',
+    subtitle: 'Cadastre seu restaurante e venda mais',
     emoji: '🏪',
     gradient: 'linear-gradient(135deg, #d97706, #2563eb)',
   },

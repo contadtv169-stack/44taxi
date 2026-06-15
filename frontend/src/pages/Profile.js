@@ -71,8 +71,32 @@ export default function Profile() {
         )}
       </div>
 
+      {/* Vem ser parceiro - Destaque */}
       {isCliente && (
         <>
+          <div className="card mb-16" style={{
+            background: 'linear-gradient(135deg, #1a1a2e, #2563eb)',
+            color: '#fff', padding: 24, textAlign: 'center', cursor: 'pointer',
+            border: '2px solid #FFD700',
+          }} onClick={() => navigate('/partner')}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>🚀</div>
+            <h3 className="font-bold text-lg">Vem ser parceiro 44Taxi!</h3>
+            <p className="text-sm mt-4" style={{ opacity: 0.9 }}>
+              Seja motorista, entregador ou cadastre seu restaurante.
+            </p>
+            <div className="flex gap-8 justify-center mt-12">
+              <span style={{ fontSize: 32 }}>🚗</span>
+              <span style={{ fontSize: 32 }}>🏍️</span>
+              <span style={{ fontSize: 32 }}>🏪</span>
+            </div>
+            <div style={{
+              background: '#FFD700', color: '#1a1a2e', fontWeight: 700,
+              borderRadius: 20, padding: '8px 20px', display: 'inline-block',
+              marginTop: 12, fontSize: 14,
+            }}>
+              Quero ser parceiro →
+            </div>
+          </div>
           <Banner type="driver" onClick={() => navigate('/partner')} style={{ marginBottom: 8 }} />
           <Banner type="partner" onClick={() => navigate('/partner')} style={{ marginBottom: 16 }} />
         </>
