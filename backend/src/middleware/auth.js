@@ -14,14 +14,28 @@ async function authenticate(req, res, next) {
       return res.status(401).json({ error: 'Token invalido ou expirado' });
     }
 
-    const { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await supabase
       .from('user_profiles')
       .select('*')
       .eq('firebase_uid', authUser.id)
       .single();
 
-    if (userError || !user) {
-      return res.status(404).json({ error: 'Perfil de usuario nao encontrado' });
+    if (!user) {
+      const { data: newUser, error: createError } = await supabase
+        .from('user_profiles')
+        .insert({
+          firebase_uid: authUser.id,
+          email: authUser.email || '',
+          name: authUser.user_metadata?.name || authUser.email?.split('@')[0] || 'Usuario',
+          role: 'cliente',
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        return res.status(500).json({ error: 'Erro ao criar perfil' });
+      }
+      user = newUser;
     }
 
     if (user.blocked) {

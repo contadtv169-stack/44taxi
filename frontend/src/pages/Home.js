@@ -124,7 +124,7 @@ export default function Home() {
 
       {/* Become Partner */}
       {profile?.role === 'cliente' && (
-        <Banner type="driver" onClick={() => navigate('/driver/register')} style={{ marginBottom: 8 }} />
+        <Banner type="driver" onClick={() => navigate('/partner')} style={{ marginBottom: 8 }} />
       )}
     </div>
   );

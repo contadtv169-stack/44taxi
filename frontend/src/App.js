@@ -15,8 +15,7 @@ import FoodCheckout from './pages/FoodCheckout';
 import OrderTracking from './pages/OrderTracking';
 import Earnings from './pages/Earnings';
 import Profile from './pages/Profile';
-import DriverRegister from './pages/DriverRegister';
-import RestaurantRegister from './pages/RestaurantRegister';
+import PartnerRegister from './pages/PartnerRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -59,8 +58,7 @@ function AppRoutes() {
         <Route path="/food/order/:id" element={<OrderTracking />} />
         <Route path="/earnings" element={<Earnings />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/driver/register" element={<DriverRegister />} />
-        <Route path="/restaurant/register" element={<RestaurantRegister />} />
+        <Route path="/partner" element={<PartnerRegister />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
     </Routes>

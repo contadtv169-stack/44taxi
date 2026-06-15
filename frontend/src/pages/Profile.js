@@ -67,8 +67,8 @@ export default function Profile() {
       {/* Seja Parceiro - para clientes */}
       {isCliente && (
         <>
-          <Banner type="driver" onClick={() => navigate('/driver/register')} style={{ marginBottom: 8 }} />
-          <Banner type="partner" onClick={() => navigate('/restaurant/register')} style={{ marginBottom: 16 }} />
+          <Banner type="driver" onClick={() => navigate('/partner')} style={{ marginBottom: 8 }} />
+          <Banner type="partner" onClick={() => navigate('/partner')} style={{ marginBottom: 16 }} />
         </>
       )}
 
