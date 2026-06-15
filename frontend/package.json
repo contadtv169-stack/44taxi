@@ -1,6 +1,7 @@
 {
   "name": "44taxi-frontend",
   "version": "1.0.0",
+  "homepage": "/44taxi",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
