@@ -1,7 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-
-const basename = process.env.REACT_APP_BASENAME || '';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
@@ -20,6 +18,30 @@ import DriverRegister from './pages/DriverRegister';
 import RestaurantRegister from './pages/RestaurantRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+  render() {
+    if (this.state.error) {
+      return React.createElement('div', {
+        style: { padding: 40, textAlign: 'center', fontFamily: 'sans-serif' }
+      },
+        React.createElement('h1', { style: { color: '#ef4444' } }, 'Erro no aplicativo'),
+        React.createElement('p', { style: { color: '#666' } }, this.state.error?.message || 'Erro desconhecido'),
+        React.createElement('pre', {
+          style: { background: '#f5f5f5', padding: 16, borderRadius: 8, fontSize: 12, marginTop: 16, textAlign: 'left', maxWidth: 600, margin: '16px auto', overflow: 'auto' }
+        }, this.state.error?.stack || '')
+      );
+    }
+    return this.props.children;
+  }
+}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -44,7 +66,7 @@ function PublicRoute({ children }) {
 }
 
 function AppRoutes() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
 
   return (
     <Routes>
@@ -73,16 +95,18 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter basename={basename}>
-      <AuthProvider>
-        <CartProvider>
-          <Toaster position="top-center" toastOptions={{
-            duration: 3000,
-            style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
-          }} />
-          <AppRoutes />
-        </CartProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <HashRouter>
+        <AuthProvider>
+          <CartProvider>
+            <Toaster position="top-center" toastOptions={{
+              duration: 3000,
+              style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
+            }} />
+            <AppRoutes />
+          </CartProvider>
+        </AuthProvider>
+      </HashRouter>
+    </ErrorBoundary>
   );
 }
