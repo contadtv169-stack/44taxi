@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiStar, FiClock, FiPhone } from 'react-icons/fi';
+import { FiSearch, FiStar, FiClock, FiPhone, FiArrowLeft } from 'react-icons/fi';
 import { useCart } from '../contexts/CartContext';
+import Banner from '../components/Banner';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -17,9 +18,7 @@ export default function Food() {
   const [menuItems, setMenuItems] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     try {
@@ -29,11 +28,8 @@ export default function Food() {
       ]);
       setRestaurants(restData.restaurants || []);
       setCategories(catData.categories || []);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { toast.error(err.message); }
+    finally { setLoading(false); }
   };
 
   const loadMenu = async (restaurant) => {
@@ -41,9 +37,7 @@ export default function Food() {
       const { items } = await api.get(`/food/menu/${restaurant.id}`);
       setMenuItems(items || []);
       setSelectedRestaurant(restaurant);
-    } catch (err) {
-      toast.error(err.message);
-    }
+    } catch (err) { toast.error(err.message); }
   };
 
   const filteredRestaurants = restaurants.filter(r => {
@@ -56,55 +50,82 @@ export default function Food() {
 
   return (
     <div className="container fade-in">
+      {/* Delivery Banner */}
+      <Banner type="food" style={{ marginBottom: 12 }} />
+
       {/* Search */}
-      <div className="card mb-16 flex items-center gap-8" style={{ padding: '8px 16px' }}>
-        <FiSearch color="var(--gray-400)" />
-        <input className="input" placeholder="Buscar restaurantes..." value={search} onChange={e => setSearch(e.target.value)} style={{ border: 'none', padding: '8px 0', fontSize: 14 }} />
+      <div className="card mb-12 flex items-center gap-8" style={{ padding: '8px 16px', borderRadius: 12 }}>
+        <FiSearch color="var(--gray-300)" />
+        <input className="input" placeholder="Buscar restaurantes ou comidas..." value={search}
+          onChange={e => setSearch(e.target.value)}
+          style={{ border: 'none', padding: '8px 0', fontSize: 14, flex: 1 }} />
       </div>
 
       {/* Categories */}
-      <div className="flex gap-8 mb-16" style={{ overflowX: 'auto', paddingBottom: 4 }}>
-        <button className={`btn btn-sm ${!selectedCategory ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', whiteSpace: 'nowrap' }} onClick={() => setSelectedCategory(null)}>Todos</button>
+      <div className="flex gap-8 mb-12" style={{ overflowX: 'auto', paddingBottom: 4, WebkitOverflowScrolling: 'touch' }}>
+        <button className={`btn btn-sm ${!selectedCategory ? 'btn-primary' : 'btn-outline'}`}
+          style={{ width: 'auto', whiteSpace: 'nowrap' }} onClick={() => setSelectedCategory(null)}>Todos</button>
         {categories.map(cat => (
-          <button key={cat} className={`btn btn-sm ${selectedCategory === cat ? 'btn-primary' : 'btn-outline'}`} style={{ width: 'auto', whiteSpace: 'nowrap' }} onClick={() => setSelectedCategory(cat)}>{cat}</button>
+          <button key={cat} className={`btn btn-sm ${selectedCategory === cat ? 'btn-primary' : 'btn-outline'}`}
+            style={{ width: 'auto', whiteSpace: 'nowrap' }} onClick={() => setSelectedCategory(cat)}>{cat}</button>
         ))}
       </div>
 
-      {/* Restaurant List */}
       {!selectedRestaurant ? (
-        <div className="grid-2">
-          {filteredRestaurants.map(r => (
-            <div key={r.id} className="card" style={{ cursor: 'pointer', overflow: 'hidden' }} onClick={() => loadMenu(r)}>
-              <div style={{ height: 120, background: 'linear-gradient(135deg, var(--yellow), #FFA500)', borderRadius: 'var(--radius-sm)', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40 }}>
-                {r.logo_url ? <img src={r.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🍽️'}
-              </div>
-              <h4 style={{ fontWeight: 600, fontSize: 14 }}>{r.name}</h4>
-              <div className="flex items-center gap-8 text-xs text-gray mt-4">
-                <span className="flex items-center gap-4"><FiStar size={12} /> {r.rating}</span>
-                <span className="flex items-center gap-4"><FiClock size={12} /> {r.delivery_time_min}min</span>
-              </div>
-              <div className="text-xs text-gray mt-4">R$ {r.delivery_fee} entrega</div>
+        <>
+          {filteredRestaurants.length === 0 ? (
+            <div className="text-center py-16">
+              <div style={{ fontSize: 48, marginBottom: 8 }}>🍽️</div>
+              <p className="text-gray">Nenhum restaurante encontrado</p>
+              <button className="btn btn-sm btn-primary mt-8" style={{ width: 'auto' }} onClick={() => setSelectedCategory(null)}>Ver todos</button>
             </div>
-          ))}
-          {filteredRestaurants.length === 0 && (
-            <p className="text-gray" style={{ gridColumn: '1/-1', textAlign: 'center', padding: 40 }}>Nenhum restaurante encontrado</p>
+          ) : (
+            <div className="grid-2">
+              {filteredRestaurants.map(r => (
+                <div key={r.id} className="card" style={{ cursor: 'pointer', overflow: 'hidden', padding: 0 }} onClick={() => loadMenu(r)}>
+                  <div style={{
+                    height: 120, background: 'linear-gradient(135deg, #1a1a2e, #2563eb)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 40,
+                  }}>
+                    {r.logo_url ? <img src={r.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🍽️'}
+                  </div>
+                  <div style={{ padding: 12 }}>
+                    <h4 style={{ fontWeight: 600, fontSize: 14 }}>{r.name}</h4>
+                    <div className="flex items-center gap-8 text-xs text-gray mt-4">
+                      <span className="flex items-center gap-4"><FiStar size={12} color="#f59e0b" /> {r.rating}</span>
+                      <span className="flex items-center gap-4"><FiClock size={12} /> {r.delivery_time_min}min</span>
+                    </div>
+                    <div className="text-xs font-semibold mt-4">
+                      {r.delivery_fee > 0 ? `R$ ${r.delivery_fee} entrega` : 'Entrega grátis'}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
-        </div>
+        </>
       ) : (
         /* Menu View */
         <div>
-          <button className="btn btn-sm btn-outline mb-16" style={{ width: 'auto' }} onClick={() => setSelectedRestaurant(null)}>← Voltar</button>
+          <button className="btn btn-sm btn-outline mb-12" style={{ width: 'auto' }} onClick={() => setSelectedRestaurant(null)}>
+            ← Voltar
+          </button>
 
-          <div className="card mb-16">
-            <div style={{ height: 160, background: 'linear-gradient(135deg, var(--yellow), #FFA500)', borderRadius: 'var(--radius-sm)', marginBottom: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60 }}>
+          <div className="card mb-12" style={{ overflow: 'hidden', padding: 0 }}>
+            <div style={{
+              height: 160, background: 'linear-gradient(135deg, #1a1a2e, #2563eb)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 60,
+            }}>
               {selectedRestaurant.logo_url ? <img src={selectedRestaurant.logo_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : '🍽️'}
             </div>
-            <h2 style={{ fontWeight: 700 }}>{selectedRestaurant.name}</h2>
-            <p className="text-sm text-gray mt-4">{selectedRestaurant.description}</p>
-            <div className="flex items-center gap-12 mt-8 text-sm">
-              <span className="flex items-center gap-4"><FiStar /> {selectedRestaurant.rating}</span>
-              <span className="flex items-center gap-4"><FiClock /> {selectedRestaurant.delivery_time_min}min</span>
-              <span className="flex items-center gap-4"><FiPhone /> {selectedRestaurant.phone}</span>
+            <div style={{ padding: 16 }}>
+              <h2 style={{ fontWeight: 700 }}>{selectedRestaurant.name}</h2>
+              <p className="text-sm text-gray mt-4">{selectedRestaurant.description}</p>
+              <div className="flex items-center gap-16 mt-8 text-sm">
+                <span className="flex items-center gap-4"><FiStar color="#f59e0b" /> {selectedRestaurant.rating}</span>
+                <span className="flex items-center gap-4"><FiClock /> {selectedRestaurant.delivery_time_min}min</span>
+                <span className="flex items-center gap-4"><FiPhone /> {selectedRestaurant.phone}</span>
+              </div>
             </div>
           </div>
 
@@ -114,9 +135,8 @@ export default function Food() {
               onClick={() => {
                 cart.setRestaurant(selectedRestaurant);
                 cart.addItem(item);
-                toast.success(`${item.name} adicionado`);
+                toast.success(`${item.name} adicionado ao carrinho`);
               }}>
-              {item.image_url && <img src={item.image_url} alt="" style={{ width: 80, height: 80, borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} />}
               <div style={{ flex: 1 }}>
                 <div className="font-semibold">{item.name}</div>
                 <p className="text-xs text-gray mt-4">{item.description}</p>
@@ -126,6 +146,9 @@ export default function Food() {
                   ) : `R$ ${item.price}`}
                 </div>
               </div>
+              {item.image_url && (
+                <img src={item.image_url} alt="" style={{ width: 80, height: 80, borderRadius: 'var(--radius-sm)', objectFit: 'cover' }} />
+              )}
             </div>
           ))}
         </div>
@@ -134,8 +157,8 @@ export default function Food() {
       {/* Cart FAB */}
       {totalItems > 0 && (
         <div style={{ position: 'fixed', bottom: 90, left: 16, right: 16, zIndex: 100 }}>
-          <button className="btn btn-primary" onClick={() => navigate('/food/checkout')}>
-            Ver Sacola ({totalItems}) - R$ {cart.subtotal.toFixed(2)}
+          <button className="btn btn-primary" onClick={() => navigate('/food/checkout')} style={{ boxShadow: '0 4px 16px rgba(0,0,0,0.3)' }}>
+            🛒 Ver Sacola ({totalItems}) • R$ {cart.subtotal.toFixed(2)}
           </button>
         </div>
       )}

@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import SplashScreen from './components/SplashScreen';
 import Layout from './components/Layout';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
@@ -18,30 +19,6 @@ import DriverRegister from './pages/DriverRegister';
 import RestaurantRegister from './pages/RestaurantRegister';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
-
-class ErrorBoundary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { error: null };
-  }
-  static getDerivedStateFromError(error) {
-    return { error };
-  }
-  render() {
-    if (this.state.error) {
-      return React.createElement('div', {
-        style: { padding: 40, textAlign: 'center', fontFamily: 'sans-serif' }
-      },
-        React.createElement('h1', { style: { color: '#ef4444' } }, 'Erro no aplicativo'),
-        React.createElement('p', { style: { color: '#666' } }, this.state.error?.message || 'Erro desconhecido'),
-        React.createElement('pre', {
-          style: { background: '#f5f5f5', padding: 16, borderRadius: 8, fontSize: 12, marginTop: 16, textAlign: 'left', maxWidth: 600, margin: '16px auto', overflow: 'auto' }
-        }, this.state.error?.stack || '')
-      );
-    }
-    return this.props.children;
-  }
-}
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -67,14 +44,12 @@ function PublicRoute({ children }) {
 
 function AppRoutes() {
   const { user } = useAuth();
-
   return (
     <Routes>
       <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
-
       <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
         <Route path="/home" element={<Home />} />
         <Route path="/rides" element={<Rides />} />
@@ -87,26 +62,29 @@ function AppRoutes() {
         <Route path="/driver/register" element={<DriverRegister />} />
         <Route path="/restaurant/register" element={<RestaurantRegister />} />
       </Route>
-
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
     </Routes>
   );
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  if (showSplash) {
+    return <SplashScreen onFinish={() => setShowSplash(false)} />;
+  }
+
   return (
-    <ErrorBoundary>
-      <HashRouter>
-        <AuthProvider>
-          <CartProvider>
-            <Toaster position="top-center" toastOptions={{
-              duration: 3000,
-              style: { borderRadius: '12px', padding: '12px 16px', fontSize: '14px' },
-            }} />
-            <AppRoutes />
-          </CartProvider>
-        </AuthProvider>
-      </HashRouter>
-    </ErrorBoundary>
+    <HashRouter>
+      <AuthProvider>
+        <CartProvider>
+          <Toaster position="top-center" toastOptions={{
+            duration: 3000,
+            style: { borderRadius: 12, padding: '12px 16px', fontSize: 14 },
+          }} />
+          <AppRoutes />
+        </CartProvider>
+      </AuthProvider>
+    </HashRouter>
   );
 }

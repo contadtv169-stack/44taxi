@@ -1,29 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiMapPin, FiSearch, FiClock, FiDollarSign } from 'react-icons/fi';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import { FiMapPin, FiCrosshair, FiClock, FiDollarSign, FiNavigation } from 'react-icons/fi';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 function LocationMarker({ onLocationSelect }) {
   useMapEvents({
-    click(e) {
-      onLocationSelect(e.latlng);
-    },
+    click(e) { onLocationSelect(e.latlng); },
   });
   return null;
 }
 
-function SetViewOnChange({ coords }) {
+function SetView({ coords }) {
   const map = useMap();
-  if (coords) map.setView(coords, 15);
+  useEffect(() => { if (coords) map.setView(coords, 15); }, [coords, map]);
+  return null;
+}
+
+function CurrentLocation({ onLocated }) {
+  const map = useMap();
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => { const latlng = [pos.coords.latitude, pos.coords.longitude]; map.setView(latlng, 15); onLocated(latlng); },
+        () => { map.setView([-23.5505, -46.6333], 4); }
+      );
+    }
+  }, [map, onLocated]);
   return null;
 }
 
 export default function Rides() {
-  const { profile } = useAuth();
   const navigate = useNavigate();
   const [origin, setOrigin] = useState('');
   const [dest, setDest] = useState('');
@@ -32,42 +41,34 @@ export default function Rides() {
   const [vehicleType, setVehicleType] = useState('carro');
   const [estimate, setEstimate] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [recentRides, setRecentRides] = useState([]);
+  const [mapCenter, setMapCenter] = useState(null);
+  const destRef = useRef(null);
 
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(pos => {
-        setOriginCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-      });
+        const c = [pos.coords.latitude, pos.coords.longitude];
+        setOriginCoords(c);
+        setMapCenter(c);
+      }, () => setMapCenter([-23.5505, -46.6333]));
     }
-    loadRecent();
   }, []);
-
-  const loadRecent = async () => {
-    try {
-      const { rides } = await api.get('/rides/history');
-      setRecentRides(rides?.slice(0, 5) || []);
-    } catch {}
-  };
 
   const handleEstimate = async () => {
     if (!originCoords || !destCoords) {
-      toast.error('Selecione origem e destino no mapa');
+      toast.error('Clique no mapa para marcar o destino');
       return;
     }
     setLoading(true);
     try {
       const data = await api.post('/rides/estimate', {
-        originLat: originCoords.lat, originLng: originCoords.lng,
-        destLat: destCoords.lat, destLng: destCoords.lng,
+        originLat: originCoords[0], originLng: originCoords[1],
+        destLat: destCoords[0], destLng: destCoords[1],
         vehicleType,
       });
       setEstimate(data);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { toast.error(err.message); }
+    finally { setLoading(false); }
   };
 
   const handleRequestRide = async () => {
@@ -75,96 +76,108 @@ export default function Rides() {
     setLoading(true);
     try {
       const { ride } = await api.post('/rides', {
-        originLat: originCoords.lat, originLng: originCoords.lng,
-        originAddress: origin || 'Origem',
-        destLat: destCoords.lat, destLng: destCoords.lng,
-        destAddress: dest || 'Destino',
+        originLat: originCoords[0], originLng: originCoords[1],
+        originAddress: origin || 'Origem selecionada',
+        destLat: destCoords[0], destLng: destCoords[1],
+        destAddress: dest || 'Destino selecionado',
         vehicleType,
       });
       toast.success('Corrida solicitada!');
       navigate(`/ride/${ride.id}`);
-    } catch (err) {
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
+    } catch (err) { toast.error(err.message); }
+    finally { setLoading(false); }
+  };
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        const c = [pos.coords.latitude, pos.coords.longitude];
+        setOriginCoords(c);
+        setMapCenter(c);
+        toast.success('Localização atualizada');
+      }, () => toast.error('Não foi possível obter localização'));
     }
   };
 
   return (
-    <div className="container fade-in">
-      <div className="card mb-16">
-        <div className="flex items-center gap-8 mb-12">
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
-          <input className="input" placeholder="Sua localizacao" value={origin} onChange={e => setOrigin(e.target.value)} style={{ border: 'none', padding: '8px 0', fontSize: 14 }} />
-        </div>
-        <div className="flex items-center gap-8">
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--danger)' }} />
-          <input className="input" placeholder="Para onde vai?" value={dest} onChange={e => setDest(e.target.value)} style={{ border: 'none', padding: '8px 0', fontSize: 14 }} />
-        </div>
-      </div>
-
-      <div className="map-container mb-16">
-        <MapContainer center={originCoords || [-23.5505, -46.6333]} zoom={14} style={{ height: '100%', width: '100%' }}>
+    <div style={{ position: 'relative', height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}>
+      {/* Map - Full height */}
+      <div style={{ flex: 1, position: 'relative' }}>
+        <MapContainer center={mapCenter || [-23.5505, -46.6333]} zoom={mapCenter ? 15 : 3}
+          style={{ height: '100%', width: '100%' }} zoomControl={true}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-          <LocationMarker onLocationSelect={(pos) => { setDestCoords(pos); toast('Destino marcado no mapa'); }} />
-          <SetViewOnChange coords={originCoords} />
-          {originCoords && <Marker position={originCoords} icon={L.divIcon({ className: 'custom-marker', html: '📍', iconSize: [24, 24] })} />}
-          {destCoords && <Marker position={destCoords} icon={L.divIcon({ className: 'custom-marker', html: '🏁', iconSize: [24, 24] })} />}
+          <CurrentLocation onLocated={(c) => { setOriginCoords(c); setMapCenter(c); }} />
+          <LocationMarker onLocationSelect={(pos) => { setDestCoords([pos.lat, pos.lng]); setDest(`Destino: ${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)}`); toast('Destino marcado no mapa'); }} />
+          {originCoords && <Marker position={originCoords} icon={L.divIcon({ className: '', html: '<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [20, 20] })} />}
+          {destCoords && <Marker position={destCoords} icon={L.divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">🏁</div>', iconSize: [24, 24] })} />}
         </MapContainer>
+
+        {/* Current Location Button */}
+        <button onClick={handleLocateMe} style={{
+          position: 'absolute', top: 16, right: 16, zIndex: 1000,
+          width: 44, height: 44, borderRadius: '50%', background: '#fff',
+          border: 'none', boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          cursor: 'pointer',
+        }}>
+          <FiCrosshair size={20} color="#2563eb" />
+        </button>
       </div>
 
-      <div className="flex gap-8 mb-16">
-        {['moto', 'carro'].map(v => (
-          <div key={v} className={`vehicle-option ${vehicleType === v ? 'selected' : ''}`} onClick={() => setVehicleType(v)} style={{ flex: 1 }}>
-            <span style={{ fontSize: 24 }}>{v === 'moto' ? '🏍️' : '🚗'}</span>
-            <div>
-              <div style={{ fontWeight: 600, textTransform: 'capitalize' }}>{v}</div>
-              <div className="text-xs text-gray">A partir de R$ {v === 'moto' ? '7' : '10'}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {estimate && (
-        <div className="card mb-16 fade-in" style={{ border: '2px solid var(--yellow)' }}>
-          <div className="flex justify-between items-center mb-8">
-            <span className="text-gray-dark">Distancia</span>
-            <span className="font-bold">{estimate.distanceKm} km</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-dark">Valor estimado</span>
-            <span className="price-tag">R$ <span>{estimate.price}</span></span>
-          </div>
+      {/* Bottom Sheet */}
+      <div style={{
+        background: '#fff', borderRadius: '20px 20px 0 0',
+        padding: '16px 16px 20px', marginTop: -20, position: 'relative', zIndex: 10,
+        boxShadow: '0 -8px 24px rgba(0,0,0,0.08)',
+      }}>
+        {/* Destination Input */}
+        <div className="flex items-center gap-8 mb-12" style={{ background: 'var(--gray-100)', borderRadius: 12, padding: '8px 14px' }}>
+          <FiMapPin color="#2563eb" size={18} />
+          <input className="input" placeholder="Sua localização" value={origin}
+            onChange={e => setOrigin(e.target.value)}
+            style={{ border: 'none', padding: '8px 0', fontSize: 14, background: 'transparent', flex: 1 }} readOnly />
         </div>
-      )}
+        <div className="flex items-center gap-8 mb-12" style={{ background: 'var(--gray-100)', borderRadius: 12, padding: '8px 14px' }}>
+          <FiNavigation color="#ef4444" size={18} />
+          <input ref={destRef} className="input" placeholder="Para onde vai? (clique no mapa)"
+            value={dest} onChange={e => setDest(e.target.value)}
+            style={{ border: 'none', padding: '8px 0', fontSize: 14, background: 'transparent', flex: 1 }} />
+        </div>
 
-      {!estimate ? (
-        <button className="btn btn-primary" onClick={handleEstimate} disabled={loading}>
-          {loading ? 'Calculando...' : 'Calcular Preco'}
-        </button>
-      ) : (
-        <button className="btn btn-primary" onClick={handleRequestRide} disabled={loading}>
-          {loading ? 'Solicitando...' : `Solicitar ${vehicleType === 'moto' ? 'Moto' : 'Carro'}`}
-        </button>
-      )}
-
-      {recentRides.length > 0 && (
-        <div className="card mt-16">
-          <h3 style={{ fontWeight: 600, marginBottom: 12 }}>Corridas Recentes</h3>
-          {recentRides.map(ride => (
-            <div key={ride.id} className="flex items-center justify-between" style={{ padding: '8px 0', borderBottom: '1px solid var(--gray-100)', cursor: 'pointer' }} onClick={() => navigate(`/ride/${ride.id}`)}>
+        {/* Vehicle Selector */}
+        <div className="flex gap-8 mb-12">
+          {[
+            { type: 'moto', label: 'Moto', icon: '🏍️', price: 'R$ 7+' },
+            { type: 'carro', label: 'Carro', icon: '🚗', price: 'R$ 10+' },
+          ].map(v => (
+            <div key={v.type} className={`vehicle-option ${vehicleType === v.type ? 'selected' : ''}`}
+              onClick={() => setVehicleType(v.type)} style={{ flex: 1, padding: '12px 14px' }}>
+              <span style={{ fontSize: 22 }}>{v.icon}</span>
               <div>
-                <div className="text-sm font-semibold">{ride.origin_address?.split(',')[0]}</div>
-                <div className="text-xs text-gray">{ride.destination_address?.split(',')[0]}</div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold">R$ {ride.final_price || ride.estimated_price}</div>
-                <span className={`badge ${ride.status === 'completed' ? 'badge-green' : 'badge-yellow'}`}>{ride.status}</span>
+                <div style={{ fontWeight: 600, fontSize: 14, textTransform: 'capitalize' }}>{v.label}</div>
+                <div className="text-xs text-gray">a partir</div>
+                <div className="text-xs font-bold">{v.price}</div>
               </div>
             </div>
           ))}
         </div>
-      )}
+
+        {/* Estimate / Request */}
+        {estimate && (
+          <div className="flex items-center justify-between mb-12 p-12" style={{ background: '#f0f7ff', borderRadius: 12 }}>
+            <div>
+              <span className="text-sm text-gray-dark">{estimate.distanceKm} km</span>
+              <span className="price-tag" style={{ fontSize: 22, marginLeft: 12 }}>R$ <span>{estimate.price}</span></span>
+            </div>
+            <span className="text-xs text-gray">~15 min</span>
+          </div>
+        )}
+
+        <button className={`btn ${estimate ? 'btn-primary' : 'btn-secondary'}`}
+          onClick={estimate ? handleRequestRide : handleEstimate} disabled={loading}>
+          {loading ? 'Processando...' : estimate ? `Solicitar ${vehicleType === 'moto' ? 'Moto' : 'Carro'} ${estimate ? `- R$ ${estimate.price}` : ''}` : 'Calcular Preço'}
+        </button>
+      </div>
     </div>
   );
 }
