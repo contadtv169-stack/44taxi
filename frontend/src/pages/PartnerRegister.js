@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield } from 'react-icons/fi';
-import api from '../services/api';
+import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield, FiFile } from 'react-icons/fi';
+import supabase from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
@@ -15,35 +15,58 @@ const steps = [
 
 export default function PartnerRegister() {
   const navigate = useNavigate();
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
   const [step, setStep] = useState(0);
   const [type, setType] = useState('');
   const [loading, setLoading] = useState(false);
   const videoRef = useRef(null);
   const [cameraActive, setCameraActive] = useState(false);
   const [faceCaptured, setFaceCaptured] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+  const [uploadField, setUploadField] = useState('');
 
   const [form, setForm] = useState({
     name: profile?.name || '',
     email: profile?.email || '',
     phone: profile?.phone || '',
     document: '',
-    // Driver fields
     cnh_number: '',
     vehicle_type: 'carro',
     vehicle_plate: '',
     vehicle_model: '',
     vehicle_color: '',
     vehicle_year: '',
-    // Delivery fields
     delivery_vehicle: 'moto',
-    // Restaurant fields
     restaurant_name: '',
     restaurant_category: '',
     restaurant_address: '',
+    documents: {},
   });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleFileUpload = async (fieldName, file) => {
+    if (!file || !user?.id) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `partners/${user.id}/${fieldName}_${Date.now()}.${ext}`;
+      const { error } = await supabase.storage
+        .from('documents')
+        .upload(path, file);
+      if (error) throw error;
+      const { data: { publicUrl } } = supabase.storage
+        .from('documents')
+        .getPublicUrl(path);
+      setForm({ ...form, documents: { ...form.documents, [fieldName]: publicUrl } });
+      toast.success(`${fieldName} enviado!`);
+    } catch (err) {
+      toast.error('Erro ao enviar arquivo');
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const startCamera = async () => {
     try {
@@ -53,7 +76,7 @@ export default function PartnerRegister() {
         videoRef.current.play();
       }
       setCameraActive(true);
-    } catch (err) {
+    } catch {
       toast.error('Permita acesso a camera para verificacao facial');
     }
   };
@@ -74,36 +97,61 @@ export default function PartnerRegister() {
     toast.success('Rosto capturado com sucesso!');
   };
 
+  const triggerUpload = (field) => {
+    setUploadField(field);
+    fileInputRef.current?.click();
+  };
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
+      const payload = {
+        firebase_uid: user?.id,
+        name: form.name,
+        email: form.email,
+        phone: form.phone,
+        document: form.document,
+        documents: form.documents,
+        selfie: form.selfie,
+      };
+
       if (type === 'driver') {
-        await api.post('/drivers/register', {
+        await supabase.from('drivers').insert({
+          ...payload,
           cnh_number: form.cnh_number,
           vehicle_type: form.vehicle_type,
           vehicle_plate: form.vehicle_plate,
           vehicle_model: form.vehicle_model,
           vehicle_color: form.vehicle_color,
-          vehicle_year: form.vehicle_year,
+          vehicle_year: form.vehicle_year ? parseInt(form.vehicle_year) : null,
+          status: 'pending',
         });
-        if (form.selfie) {
-          await api.post('/auth/face-verify', { selfieBase64: form.selfie });
-        }
       } else if (type === 'delivery') {
-        await api.post('/drivers/delivery/register', {
+        await supabase.from('delivery_people').insert({
+          ...payload,
           vehicle_type: form.delivery_vehicle,
+          status: 'pending',
         });
-        if (form.selfie) {
-          await api.post('/auth/face-verify', { selfieBase64: form.selfie });
-        }
       } else if (type === 'restaurant') {
-        await api.post('/restaurants/register', {
+        await supabase.from('restaurants').insert({
+          owner_firebase_uid: user?.id,
+          owner_name: form.name,
+          owner_email: form.email,
+          owner_phone: form.phone,
           name: form.restaurant_name,
           category: form.restaurant_category,
           address_street: form.restaurant_address,
-          phone: form.phone,
+          status: 'pending',
         });
       }
+
+      const roleMap = { driver: 'taxista', delivery: 'entregador', restaurant: 'dono_restaurante' };
+      await supabase.from('user_profiles').update({
+        role: roleMap[type],
+        face_verified: !!form.selfie,
+        name: form.name,
+        phone: form.phone,
+      }).eq('firebase_uid', user?.id);
 
       toast.success('Cadastro enviado para analise!');
       setStep(4);
@@ -118,6 +166,9 @@ export default function PartnerRegister() {
 
   return (
     <div className="container fade-in" style={{ paddingBottom: 40 }}>
+      <input ref={fileInputRef} type="file" accept="image/*,.pdf" style={{ display: 'none' }}
+        onChange={(e) => { if (e.target.files[0]) handleFileUpload(uploadField, e.target.files[0]); }} />
+
       <button className="btn btn-sm btn-ghost mb-12" style={{ width: 'auto', padding: '8px 0' }}
         onClick={() => step === 0 ? navigate(-1) : setStep(step - 1)}>
         <FiArrowLeft size={18} /> {step === 0 ? 'Voltar' : 'Passo anterior'}
@@ -125,12 +176,10 @@ export default function PartnerRegister() {
 
       <h2 className="font-bold text-xl mb-4">Ser Parceiro</h2>
 
-      {/* Progress Bar */}
       <div style={{ height: 4, background: 'var(--gray-100)', borderRadius: 4, marginBottom: 24, overflow: 'hidden' }}>
         <div style={{ height: '100%', width: `${progress}%`, background: 'var(--blue)', borderRadius: 4, transition: 'width 0.4s ease' }} />
       </div>
 
-      {/* Step indicators */}
       <div className="flex justify-between mb-24">
         {steps.map((s, i) => (
           <div key={s.id} className="flex flex-col items-center" style={{ flex: 1 }}>
@@ -146,7 +195,6 @@ export default function PartnerRegister() {
         ))}
       </div>
 
-      {/* Step 0: Choose Type */}
       {step === 0 && (
         <div className="fade-in">
           <p className="text-sm text-gray-dark mb-16">Escolha como deseja trabalhar conosco</p>
@@ -173,7 +221,6 @@ export default function PartnerRegister() {
         </div>
       )}
 
-      {/* Step 1: Personal Data */}
       {step === 1 && (
         <div className="fade-in">
           <h3 className="font-bold mb-16">Dados Pessoais</h3>
@@ -278,31 +325,46 @@ export default function PartnerRegister() {
         </div>
       )}
 
-      {/* Step 2: Documents */}
       {step === 2 && (
         <div className="fade-in">
           <h3 className="font-bold mb-16">Documentos</h3>
-          <div className="card text-center" style={{ padding: 32 }}>
-            <div style={{ fontSize: 48, marginBottom: 16 }}>📄</div>
+          <div className="card">
             <p className="text-sm text-gray-dark mb-16">Envie os documentos para verificacao</p>
             <div className="flex flex-col gap-8">
               {type !== 'restaurant' && (
                 <>
-                  <button className="btn btn-outline"><FiUpload /> CNH (frente)</button>
-                  <button className="btn btn-outline"><FiUpload /> CNH (verso)</button>
+                  <div className="flex items-center gap-8" style={{ cursor: 'pointer', padding: 12, background: form.documents.cnh_front ? '#f0f7ff' : 'var(--gray-100)', borderRadius: 12, border: form.documents.cnh_front ? '1px solid var(--blue)' : 'none' }} onClick={() => triggerUpload('cnh_front')}>
+                    <FiFile size={20} color={form.documents.cnh_front ? 'var(--blue)' : 'var(--gray-300)'} />
+                    <span style={{ flex: 1, fontSize: 14 }}>{form.documents.cnh_front ? 'CNH (frente) ✓' : 'CNH (frente)'}</span>
+                    {uploading && uploadField === 'cnh_front' ? <span className="text-xs">Enviando...</span> : <FiUpload size={16} />}
+                  </div>
+                  <div className="flex items-center gap-8" style={{ cursor: 'pointer', padding: 12, background: form.documents.cnh_back ? '#f0f7ff' : 'var(--gray-100)', borderRadius: 12, border: form.documents.cnh_back ? '1px solid var(--blue)' : 'none' }} onClick={() => triggerUpload('cnh_back')}>
+                    <FiFile size={20} color={form.documents.cnh_back ? 'var(--blue)' : 'var(--gray-300)'} />
+                    <span style={{ flex: 1, fontSize: 14 }}>{form.documents.cnh_back ? 'CNH (verso) ✓' : 'CNH (verso)'}</span>
+                    {uploading && uploadField === 'cnh_back' ? <span className="text-xs">Enviando...</span> : <FiUpload size={16} />}
+                  </div>
                 </>
               )}
-              <button className="btn btn-outline"><FiUpload /> Selfie com documento</button>
-              {type === 'driver' && <button className="btn btn-outline"><FiUpload /> Documento do veiculo</button>}
+              <div className="flex items-center gap-8" style={{ cursor: 'pointer', padding: 12, background: form.documents.selfie_doc ? '#f0f7ff' : 'var(--gray-100)', borderRadius: 12, border: form.documents.selfie_doc ? '1px solid var(--blue)' : 'none' }} onClick={() => triggerUpload('selfie_doc')}>
+                <FiFile size={20} color={form.documents.selfie_doc ? 'var(--blue)' : 'var(--gray-300)'} />
+                <span style={{ flex: 1, fontSize: 14 }}>{form.documents.selfie_doc ? 'Selfie com documento ✓' : 'Selfie com documento'}</span>
+                {uploading && uploadField === 'selfie_doc' ? <span className="text-xs">Enviando...</span> : <FiUpload size={16} />}
+              </div>
+              {type === 'driver' && (
+                <div className="flex items-center gap-8" style={{ cursor: 'pointer', padding: 12, background: form.documents.vehicle_doc ? '#f0f7ff' : 'var(--gray-100)', borderRadius: 12, border: form.documents.vehicle_doc ? '1px solid var(--blue)' : 'none' }} onClick={() => triggerUpload('vehicle_doc')}>
+                  <FiFile size={20} color={form.documents.vehicle_doc ? 'var(--blue)' : 'var(--gray-300)'} />
+                  <span style={{ flex: 1, fontSize: 14 }}>{form.documents.vehicle_doc ? 'Documento do veiculo ✓' : 'Documento do veiculo'}</span>
+                  {uploading && uploadField === 'vehicle_doc' ? <span className="text-xs">Enviando...</span> : <FiUpload size={16} />}
+                </div>
+              )}
             </div>
             <button className="btn btn-primary mt-16" onClick={() => setStep(3)}>
-              Pular, vou enviar depois →
+              {Object.keys(form.documents).length > 0 ? 'Continuar →' : 'Pular, vou enviar depois →'}
             </button>
           </div>
         </div>
       )}
 
-      {/* Step 3: Facial Verification */}
       {step === 3 && (
         <div className="fade-in">
           <h3 className="font-bold mb-16">Verificacao Facial</h3>
@@ -349,7 +411,6 @@ export default function PartnerRegister() {
         </div>
       )}
 
-      {/* Step 4: Done */}
       {step === 4 && (
         <div className="fade-in text-center" style={{ paddingTop: 40 }}>
           <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>

@@ -1,17 +1,56 @@
-import api from './api';
+import axios from 'axios';
+import { createPixGoPayment } from './pixgo';
 
-export const createPixPayment = async (amount, description) => {
-  return api.post('/payments/pix/create', { amount, description });
-};
+const KRYPT_CLIENT_ID = 'krypt_ci_0a11b24e6858ca92d4';
+const KRYPT_CLIENT_SECRET = 'krypt_cs_a157ad3247476c1a06734db868ce2ec7';
+const KRYPT_API = 'https://kryptgateway.netlify.app/api';
 
-export const checkPixStatus = async (transactionId) => {
-  return api.get(`/payments/pix/status?transactionId=${transactionId}`);
-};
+let cachedToken = null;
 
-export const payRide = async (rideId, method) => {
-  return api.post('/payments/ride/pay', { rideId, method });
-};
+async function getToken() {
+  if (cachedToken) return cachedToken;
+  try {
+    const { data } = await axios.post(`${KRYPT_API}/auth`, {
+      client_id: KRYPT_CLIENT_ID,
+      client_secret: KRYPT_CLIENT_SECRET,
+    });
+    cachedToken = data.access_token;
+    return cachedToken;
+  } catch { return null; }
+}
 
-export const payOrder = async (orderId, method) => {
-  return api.post('/payments/order/pay', { orderId, method });
-};
+// Cobrar taxa do motorista (R$ 7 por corrida)
+export async function chargeDriverFee(rideId, driverId, amount = 7) {
+  try {
+    const token = await getToken();
+    if (!token) throw new Error('Falha ao autenticar Krypt Pay');
+    const { data } = await axios.post(`${KRYPT_API}/charge`, {
+      amount,
+      description: `Taxa 44Taxi - Corrida #${rideId}`,
+      external_id: `ride_${rideId}_driver_${driverId}`,
+      metadata: { type: 'driver_fee', ride_id: rideId, driver_id: driverId },
+    }, { headers: { Authorization: `Bearer ${token}` } });
+    return data;
+  } catch (err) {
+    console.error('Erro taxa Krypt:', err);
+    return null;
+  }
+}
+
+// Pagamento do passageiro via PixGo ou PIX normal
+export async function payRide(rideId, method) {
+  if (method === 'pix') {
+    return createPixGoPayment(rideId);
+  }
+  // Cartao / Dinheiro: registra localmente
+  return {
+    success: true,
+    payment: {
+      method,
+      status: 'pending',
+      message: method === 'cash' ? 'Pague em dinheiro ao motorista' : 'Pagamento registrado',
+    },
+  };
+}
+
+export { getToken };

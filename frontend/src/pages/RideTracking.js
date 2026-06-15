@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiPhone, FiMessageCircle, FiXCircle, FiMapPin, FiUser, FiNavigation } from 'react-icons/fi';
+import { FiPhone, FiMessageCircle, FiXCircle, FiMapPin, FiUser, FiNavigation, FiCheckCircle, FiDownload } from 'react-icons/fi';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import api from '../services/api';
-import { payRide } from '../services/krypt';
+import { payRide, chargeDriverFee } from '../services/krypt';
 import voice from '../components/VoiceService';
 import toast from 'react-hot-toast';
 
@@ -26,8 +26,10 @@ export default function RideTracking() {
   const navigate = useNavigate();
   const [ride, setRide] = useState(null);
   const [showPayment, setShowPayment] = useState(null);
+  const [showReceipt, setShowReceipt] = useState(false);
   const [loading, setLoading] = useState(true);
   const [userCoords, setUserCoords] = useState(null);
+  const [paying, setPaying] = useState(false);
   const prevStatusRef = useRef();
 
   useEffect(() => {
@@ -56,7 +58,7 @@ export default function RideTracking() {
       if (data.status === 'completed' && prevStatus !== 'completed') {
         voice.arrivedDestination(data.destination_address || 'destino');
         if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification('44Taxi', { body: 'Você chegou ao seu destino!' });
+          new Notification('44Taxi', { body: 'Voce chegou ao seu destino!' });
         }
       }
 
@@ -76,18 +78,29 @@ export default function RideTracking() {
   };
 
   const handlePay = async (method) => {
+    setPaying(true);
     try {
       const data = await payRide(id, method);
-      if (data.payment?.qrCodeBase64) {
+      if (data.payment?.copyPaste || data.payment?.qrImageUrl) {
         setShowPayment(data.payment);
-        toast.success('QR Code PIX gerado!');
-      } else if (data.payment?.copyPaste) {
-        setShowPayment(data.payment);
-        toast.success('Codigo PIX copiado!');
+        toast.success('PIX gerado!');
       } else {
+        setShowReceipt(true);
         toast.success('Pagamento registrado!');
       }
+
+      // Cobrar taxa do motorista via Krypt Pay
+      if (ride?.driver?.user_id) {
+        chargeDriverFee(id, ride.driver.user_id, 7);
+      }
     } catch (err) { toast.error(err.message); }
+    finally { setPaying(false); }
+  };
+
+  const handleConfirmPayment = () => {
+    setShowPayment(null);
+    setShowReceipt(true);
+    toast.success('Pagamento confirmado!');
   };
 
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;
@@ -116,6 +129,84 @@ export default function RideTracking() {
   const origin = [ride.origin_lat, ride.origin_lng];
   const destination = [ride.destination_lat, ride.destination_lng];
   const hasRoute = origin && destination;
+
+  // Tela de comprovante
+  if (showReceipt) {
+    const now = new Date();
+    return (
+      <div className="container fade-in text-center" style={{ paddingTop: 20 }}>
+        <div className="card" style={{ padding: 32, border: '2px solid var(--success)' }}>
+          <FiCheckCircle size={56} color="var(--success)" style={{ marginBottom: 12 }} />
+          <h2 className="font-bold text-xl mb-4">Pagamento Confirmado!</h2>
+          <p className="text-sm text-gray-dark mb-16">Comprovante de pagamento</p>
+
+          <div style={{ textAlign: 'left', background: 'var(--gray-100)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+            <div className="flex justify-between mb-4">
+              <span className="text-xs text-gray">Corrida</span>
+              <span className="text-xs font-semibold">#{ride.id}</span>
+            </div>
+            <div className="divider" />
+            <div className="flex justify-between mb-4 mt-4">
+              <span className="text-xs text-gray">Data</span>
+              <span className="text-xs font-semibold">{now.toLocaleDateString('pt-BR')} {now.toLocaleTimeString('pt-BR')}</span>
+            </div>
+            <div className="divider" />
+            <div className="flex justify-between mb-4 mt-4">
+              <span className="text-xs text-gray">De</span>
+              <span className="text-xs font-semibold">{ride.origin_address}</span>
+            </div>
+            <div className="divider" />
+            <div className="flex justify-between mb-4 mt-4">
+              <span className="text-xs text-gray">Para</span>
+              <span className="text-xs font-semibold">{ride.destination_address}</span>
+            </div>
+            <div className="divider" />
+            <div className="flex justify-between mb-4 mt-4">
+              <span className="text-xs text-gray">Valor</span>
+              <span className="text-lg font-bold" style={{ color: 'var(--success)' }}>R$ {ride.final_price || ride.estimated_price}</span>
+            </div>
+            <div className="divider" />
+            <div className="flex justify-between mt-4">
+              <span className="text-xs text-gray">Metodo</span>
+              <span className="text-xs font-semibold">
+                {showPayment?.provider === 'pixgo' ? 'PIX (PixGo)' : showPayment ? 'PIX' : 'Pago'}
+              </span>
+            </div>
+            {ride.driver && (
+              <>
+                <div className="divider" />
+                <div className="flex justify-between mt-4">
+                  <span className="text-xs text-gray">Motorista</span>
+                  <span className="text-xs font-semibold">{ride.driver?.user?.name}</span>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={{ textAlign: 'center', marginBottom: 16, padding: 12, background: '#f0f7ff', borderRadius: 12, fontSize: 11, fontFamily: 'monospace', wordBreak: 'break-all' }}>
+            {showPayment?.copyPaste || `44TAXI-${String(ride.id).padStart(8, '0')}`}
+          </div>
+
+          <div className="flex gap-8">
+            <button className="btn btn-primary" style={{ flex: 1 }} onClick={() => navigate('/rides')}>
+              Nova Corrida
+            </button>
+            <button className="btn btn-outline" style={{ width: 'auto' }} onClick={() => {
+              const receipt = `44TAXI\nCorrida #${ride.id}\n${now.toLocaleDateString('pt-BR')} ${now.toLocaleTimeString('pt-BR')}\nDe: ${ride.origin_address}\nPara: ${ride.destination_address}\nValor: R$ ${ride.final_price || ride.estimated_price}\nObrigado por viajar conosco!`;
+              navigator.clipboard.writeText(receipt);
+              toast.success('Comprovante copiado!');
+            }}>
+              <FiDownload /> Copiar
+            </button>
+          </div>
+
+          <div className="mt-16 mb-8 flex justify-center" style={{ fontSize: 11, color: 'var(--gray-300)' }}>
+            <span>44Taxi v1.0 • Obrigado por viajar conosco!</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container fade-in">
@@ -202,31 +293,32 @@ export default function RideTracking() {
         <button className="btn btn-danger" onClick={handleCancel}><FiXCircle /> Cancelar Corrida</button>
       )}
 
-      {ride.status === 'completed' && !ride.payment_status === 'paid' && !showPayment && (
+      {ride.status === 'completed' && !showPayment && !showReceipt && (
         <div className="card mb-12">
           <h3 className="font-bold mb-12">Forma de Pagamento</h3>
           <div className="flex gap-8">
-            <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handlePay('pix')}>
+            <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handlePay('pix')} disabled={paying}>
               <span style={{ fontSize: 18 }}>💳</span> PIX
             </button>
-            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('card')}>
+            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('card')} disabled={paying}>
               💳 Cartao
             </button>
-            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('cash')}>
+            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('cash')} disabled={paying}>
               💵 Dinheiro
             </button>
           </div>
+          {paying && <p className="text-xs text-gray text-center mt-8">Processando...</p>}
         </div>
       )}
 
-      {showPayment && (
+      {showPayment && !showReceipt && (
         <div className="card mb-12 fade-in" style={{ textAlign: 'center' }}>
           <h3 className="font-bold mb-8">Pague com PIX</h3>
           <div style={{
             background: '#fff', padding: 16, borderRadius: 16,
             display: 'inline-block', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
           }}>
-            <img src={showPayment.qrCodeBase64 || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${showPayment.copyPaste || '44taxi'}`}
+            <img src={showPayment.qrImageUrl || `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${showPayment.copyPaste || '44taxi'}`}
               alt="QR Code PIX" style={{ width: 200, height: 200, borderRadius: 8 }} />
           </div>
           {showPayment.copyPaste && (
@@ -239,11 +331,14 @@ export default function RideTracking() {
             </div>
           )}
           <p className="text-xs text-gray mt-8">Escaneie o QR Code ou copie o codigo para pagar</p>
+          <button className="btn btn-primary mt-12" onClick={handleConfirmPayment}>
+            <FiCheckCircle /> Ja paguei - Confirmar
+          </button>
         </div>
       )}
 
-      {ride.status === 'completed' && (
-        <div className="card text-center">
+      {ride.status === 'completed' && showReceipt && (
+        <div className="card text-center mb-12" style={{ border: '1px solid var(--success)' }}>
           <h3 className="font-bold mb-8">Avalie sua viagem</h3>
           <div className="flex gap-8 justify-center mb-8" style={{ fontSize: 32 }}>
             {[1, 2, 3, 4, 5].map(s => (
