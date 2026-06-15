@@ -53,4 +53,12 @@ export async function payRide(rideId, method) {
   };
 }
 
+// Pagamento de pedido food
+export async function payOrder(orderId, method) {
+  if (method === 'pix') {
+    return createPixGoPayment(orderId, null, 'Pedido Food');
+  }
+  return { success: true, payment: { method, status: 'pending' } };
+}
+
 export { getToken };
