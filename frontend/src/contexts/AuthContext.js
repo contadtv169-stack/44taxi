@@ -10,15 +10,16 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async () => {
+    // 1. Try backend API
     try {
       const { data } = await api.get('/auth/me');
       if (data?.user) { setProfile(data.user); return data.user; }
     } catch {}
 
-    // Fallback: load profile directly from Supabase
+    // 2. Try Supabase direct (fallback: no backend available)
     try {
-      const session = await supabase.auth.getSession();
-      const uid = session?.data?.session?.user?.id;
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
       if (!uid) { setProfile(null); return null; }
 
       const { data: direct } = await supabase
@@ -29,14 +30,14 @@ export function AuthProvider({ children }) {
 
       if (direct) { setProfile(direct); return direct; }
 
-      // Auto-create profile directly
-      const email = session.data.session.user.email;
+      // 3. Auto-create profile directly in Supabase
+      const email = session.user.email || '';
       const { data: newProfile, error: createErr } = await supabase
         .from('user_profiles')
         .insert({
           firebase_uid: uid,
-          email: email || '',
-          name: email?.split('@')[0] || 'Usuario',
+          email,
+          name: email.split('@')[0] || 'Usuario',
           role: 'cliente',
         })
         .select()

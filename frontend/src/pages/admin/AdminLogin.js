@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../../config/supabase';
-import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
@@ -17,8 +16,16 @@ export default function AdminLogin() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      const { data } = await api.get('/auth/me');
-      if (data.user.role !== 'admin') {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+
+      const { data: profile } = await supabase
+        .from('user_profiles')
+        .select('role')
+        .eq('firebase_uid', uid)
+        .maybeSingle();
+
+      if (profile?.role !== 'admin') {
         await supabase.auth.signOut();
         toast.error('Acesso nao autorizado');
         return;

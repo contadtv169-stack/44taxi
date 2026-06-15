@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiShield, FiLogOut, FiChevronRight, FiCamera, FiStar, FiSettings, FiHelpCircle, FiInfo, FiAward } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
-import api from '../services/api';
+import supabase from '../config/supabase';
 import Banner from '../components/Banner';
 import toast from 'react-hot-toast';
 
 export default function Profile() {
-  const { profile, logout, loadProfile } = useAuth();
+  const { user, profile, logout, loadProfile } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(profile?.name || '');
@@ -16,7 +16,11 @@ export default function Profile() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await api.put('/auth/profile', { name });
+      const { error } = await supabase
+        .from('user_profiles')
+        .update({ name })
+        .eq('firebase_uid', user?.id);
+      if (error) throw error;
       await loadProfile();
       toast.success('Perfil atualizado');
       setEditing(false);
@@ -29,22 +33,25 @@ export default function Profile() {
     navigate('/login');
   };
 
-  const isCliente = profile?.role === 'cliente';
+  const isCliente = !profile || profile?.role === 'cliente';
+  const displayName = profile?.name || user?.email?.split('@')[0] || 'Usuario';
+  const displayEmail = profile?.email || user?.email || '';
+  const displayPhone = profile?.phone || '';
+  const displayRole = profile?.role === 'dono_delivery' ? 'Dono de Delivery' : (profile?.role || 'Cliente');
 
   return (
     <div className="container fade-in">
-      {/* Profile Card */}
       <div className="card text-center mb-16" style={{ padding: 24, border: '1px solid var(--gray-100)' }}>
         <div className="avatar" style={{ width: 80, height: 80, fontSize: 32, margin: '0 auto 12px', background: 'var(--black)', color: '#fff' }}>
-          {profile?.name?.[0]?.toUpperCase() || '?'}
+          {displayName[0]?.toUpperCase() || '?'}
         </div>
         {!editing ? (
           <>
-            <h2 className="font-bold text-xl">{profile?.name}</h2>
-            <p className="text-sm text-gray">{profile?.email}</p>
-            {profile?.phone && <p className="text-xs text-gray mt-4">{profile?.phone}</p>}
+            <h2 className="font-bold text-xl">{displayName}</h2>
+            <p className="text-sm text-gray">{displayEmail}</p>
+            {displayPhone && <p className="text-xs text-gray mt-4">{displayPhone}</p>}
             <span className="badge badge-black mt-8" style={{ textTransform: 'capitalize' }}>
-              {profile?.role === 'dono_delivery' ? 'Dono de Delivery' : profile?.role || 'Cliente'}
+              {displayRole}
             </span>
             <div className="flex gap-8 mt-12 justify-center">
               <button className="btn btn-sm btn-outline" style={{ width: 'auto' }} onClick={() => setEditing(true)}>Editar Perfil</button>
@@ -64,7 +71,6 @@ export default function Profile() {
         )}
       </div>
 
-      {/* Seja Parceiro - para clientes */}
       {isCliente && (
         <>
           <Banner type="driver" onClick={() => navigate('/partner')} style={{ marginBottom: 8 }} />
@@ -72,7 +78,6 @@ export default function Profile() {
         </>
       )}
 
-      {/* Driver / Restaurant Stats */}
       {!isCliente && (
         <div className="card mb-16">
           <h3 className="font-semibold mb-12">Seu Negócio</h3>
@@ -87,7 +92,6 @@ export default function Profile() {
         </div>
       )}
 
-      {/* Quick Access */}
       <div className="card mb-16">
         <h3 className="font-semibold mb-12">Acesso Rapido</h3>
         {[
@@ -105,7 +109,6 @@ export default function Profile() {
         ))}
       </div>
 
-      {/* Config */}
       <div className="card mb-16">
         <h3 className="font-semibold mb-12">Configurações</h3>
         {[
