@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import 'leaflet/dist/leaflet.css';
 import './styles/global.css';
 
 // Capture global errors to debug white screen
