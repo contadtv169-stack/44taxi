@@ -5,8 +5,13 @@ import 'leaflet/dist/leaflet.css';
 import './components/LeafletSafeInit'; // patches DomUtil to suppress _leaflet_pos errors
 import './styles/global.css';
 
+// Suppress non-fatal Leaflet _leaflet_pos errors
+// Suppress non-fatal Leaflet _leaflet_pos errors
+const isLeafletPosError = (msg) => String(msg || '').includes('_leaflet_pos');
+
 // Capture global errors to debug white screen
 window.onerror = function(msg, url, line, col, error) {
+  if (isLeafletPosError(msg)) return true;
   const errDiv = document.getElementById('js-error');
   if (errDiv) {
     errDiv.style.display = 'block';
@@ -16,10 +21,12 @@ window.onerror = function(msg, url, line, col, error) {
 };
 
 window.addEventListener('unhandledrejection', function(e) {
+  const msg = e.reason?.message || e.reason || '';
+  if (isLeafletPosError(msg)) return;
   const errDiv = document.getElementById('js-error');
   if (errDiv) {
     errDiv.style.display = 'block';
-    errDiv.innerHTML = `<strong>Erro:</strong> ${e.reason?.message || e.reason || 'Erro desconhecido'}`;
+    errDiv.innerHTML = `<strong>Erro:</strong> ${msg}`;
   }
   console.error('Unhandled rejection:', e.reason);
 });
