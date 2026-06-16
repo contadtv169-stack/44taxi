@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff, FiFace } from 'react-icons/fi';
 import supabase from '../../config/supabase';
 import Logo from '../../components/Logo';
+import { isBiometricSupported, authenticateBiometric, hasBiometricRegistered } from '../../services/webauthn';
 import toast from 'react-hot-toast';
 
 export default function Login() {
@@ -68,6 +69,25 @@ export default function Login() {
           </form>
 
           <div className="divider" />
+          {isBiometricSupported() && hasBiometricRegistered() && (
+            <button className="btn btn-outline mt-8" style={{ width: '100%', justifyContent: 'center' }}
+              onClick={async () => {
+                try {
+                  await authenticateBiometric();
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (session) {
+                    toast.success('Login biometrico realizado!');
+                    navigate('/home');
+                  } else {
+                    toast.error('Sessao expirada, faca login normal');
+                  }
+                } catch (e) {
+                  if (e.name !== 'NotAllowedError') toast.error('Falha na biometria');
+                }
+              }}>
+              <FiFace size={18} /> Entrar com Face ID
+            </button>
+          )}
           <p className="text-center" style={{ color: 'var(--gray-300)', fontSize: 14 }}>
             Nao tem conta?{' '}
             <Link to="/register" style={{ color: 'var(--blue)', fontWeight: 600, textDecoration: 'none' }}>Cadastre-se</Link>

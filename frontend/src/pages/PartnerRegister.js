@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield, FiFile } from 'react-icons/fi';
+import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield, FiFile, FiFace } from 'react-icons/fi';
 import supabase from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { isBiometricSupported, registerBiometric, hasBiometricRegistered } from '../services/webauthn';
 import toast from 'react-hot-toast';
 
 const steps = [
@@ -472,6 +473,24 @@ export default function PartnerRegister() {
             <p className="text-sm font-semibold">Documentos verificados com sucesso</p>
             <p className="text-xs text-gray-dark mt-4">Biometria facial confirmada</p>
           </div>
+          {isBiometricSupported() && !hasBiometricRegistered() && (
+            <div className="card mb-16" style={{ border: '2px solid var(--blue)', padding: 20 }}>
+              <FiFace size={32} color="var(--blue)" style={{ marginBottom: 8 }} />
+              <h3 className="font-bold">Desbloqueio Facial</h3>
+              <p className="text-xs text-gray-dark mt-4 mb-12">Acesse sua conta rapidamente com Face ID / Biometria</p>
+              <button className="btn btn-primary" style={{ width: '100%' }}
+                onClick={async () => {
+                  try {
+                    await registerBiometric(user?.id || '', form.name || 'Parceiro');
+                    toast.success('Biometria cadastrada!');
+                  } catch (e) {
+                    if (e.name !== 'NotAllowedError') toast.error('Erro ao cadastrar biometria');
+                  }
+                }}>
+                <FiFace size={16} /> Ativar Desbloqueio Facial
+              </button>
+            </div>
+          )}
           <div className="card mb-16" style={{ background: 'linear-gradient(135deg, #059669, #2563eb)', color: '#fff', padding: 20 }}>
             <div className="font-bold text-lg">🚀 Pronto para começar!</div>
             <p className="text-sm mt-4" style={{ opacity: 0.9 }}>

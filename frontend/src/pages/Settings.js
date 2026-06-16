@@ -170,6 +170,7 @@ function PreferencesSection() {
   const [sound, setSound] = useState(true);
   const [dark, setDark] = useState(true);
   const [lang, setLang] = useState('pt-BR');
+  const [bioRegistered, setBioRegistered] = useState(hasBiometricRegistered());
 
   return (
     <div className="fade-in">
@@ -191,6 +192,32 @@ function PreferencesSection() {
             </label>
           </div>
         ))}
+        {isBiometricSupported() && (
+          <div className="flex items-center justify-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--gray-100)' }}>
+            <div className="flex items-center gap-8">
+              <span style={{ fontSize: 18 }}>😀</span>
+              <span className="text-sm">Desbloqueio Facial</span>
+            </div>
+            {bioRegistered ? (
+              <button className="btn btn-sm btn-outline" style={{ width: 'auto', fontSize: 11, color: '#dc2626', borderColor: '#dc2626' }}
+                onClick={() => { removeBiometric(); setBioRegistered(false); toast.success('Biometria removida'); }}>
+                Remover
+              </button>
+            ) : (
+              <button className="btn btn-sm btn-primary" style={{ width: 'auto', fontSize: 11 }}
+                onClick={async () => {
+                  try {
+                    const { data: { session } } = await supabase.auth.getSession();
+                    await registerBiometric(session?.user?.id || '', session?.user?.email || 'Usuario');
+                    setBioRegistered(true);
+                    toast.success('Biometria cadastrada!');
+                  } catch (e) { if (e.name !== 'NotAllowedError') toast.error('Erro ao cadastrar'); }
+                }}>
+                Cadastrar
+              </button>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between" style={{ padding: '12px 0' }}>
           <div className="flex items-center gap-8">
             <FiGlobe size={18} color="var(--gray-300)" />
