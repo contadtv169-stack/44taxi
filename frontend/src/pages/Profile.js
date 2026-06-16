@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiUser, FiMail, FiPhone, FiShield, FiLogOut, FiChevronRight, FiCamera, FiStar, FiSettings, FiHelpCircle, FiInfo, FiAward } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiShield, FiLogOut, FiChevronRight, FiCamera, FiStar, FiSettings, FiHelpCircle, FiInfo, FiAward, FiAlertTriangle } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import supabase from '../config/supabase';
 import Banner from '../components/Banner';
@@ -137,13 +137,15 @@ export default function Profile() {
       <div className="card mb-16">
         <h3 className="font-semibold mb-12">Configurações</h3>
         {[
-          { icon: FiShield, label: 'Verificação de Identidade' },
-          { icon: FiStar, label: 'Avaliações' },
-          { icon: FiSettings, label: 'Preferências' },
-          { icon: FiHelpCircle, label: 'Ajuda e Suporte' },
-          { icon: FiInfo, label: 'Sobre o 44Taxi v1.0' },
+          { icon: FiShield, label: 'Verificacao de Identidade', section: 'identity' },
+          { icon: FiAlertTriangle, label: 'Verificacao de Idade', section: 'age' },
+          { icon: FiStar, label: 'Avaliacoes', section: 'reviews' },
+          { icon: FiSettings, label: 'Preferencias', section: 'preferences' },
+          { icon: FiHelpCircle, label: 'Ajuda e Suporte', section: 'help' },
+          { icon: FiInfo, label: 'Sobre o 44Taxi', section: 'about' },
         ].map((item, i) => (
-          <div key={i} className="flex items-center justify-between" style={{ padding: '12px 0', cursor: 'pointer', borderBottom: i < 4 ? '1px solid var(--gray-100)' : 'none' }}>
+          <div key={i} className="flex items-center justify-between" style={{ padding: '12px 0', cursor: 'pointer', borderBottom: i < 5 ? '1px solid var(--gray-100)' : 'none' }}
+            onClick={() => navigate(`/settings?section=${item.section}`)}>
             <div className="flex items-center gap-12">
               <item.icon size={18} color="var(--gray-300)" />
               <span className="font-medium text-sm">{item.label}</span>

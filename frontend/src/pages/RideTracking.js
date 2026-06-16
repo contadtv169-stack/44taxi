@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPhone, FiMessageCircle, FiXCircle, FiMapPin, FiUser, FiNavigation, FiCheckCircle, FiDownload } from 'react-icons/fi';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
-import L from 'leaflet';
+import { divIcon } from 'leaflet';
 import supabase from '../config/supabase';
 import { payRide, chargeDriverFee } from '../services/krypt';
 import { reverseGeocode } from '../services/geocode';
@@ -181,9 +181,9 @@ export default function RideTracking() {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <UserLocation onLocated={setUserCoords} />
           <Marker position={origin}
-            icon={L.divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>', iconSize: [24, 24] })} />
+            icon={divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>', iconSize: [24, 24] })} />
           <Marker position={destination}
-            icon={L.divIcon({ className: '', html: '<div style="width:28px;height:28px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:bold">🏁</div>', iconSize: [28, 28] })} />
+            icon={divIcon({ className: '', html: '<div style="width:28px;height:28px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:bold">🏁</div>', iconSize: [28, 28] })} />
           {hasRoute && (
             <Polyline positions={[origin, destination]} pathOptions={{
               color: '#2563eb', weight: 4, opacity: 0.7, dashArray: '10, 8',
@@ -191,7 +191,7 @@ export default function RideTracking() {
           )}
           {userCoords && (
             <Marker position={userCoords}
-              icon={L.divIcon({ className: '', html: '<div style="width:16px;height:16px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [16, 16] })} />
+              icon={divIcon({ className: '', html: '<div style="width:16px;height:16px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [16, 16] })} />
           )}
         </MapContainer>
       </div>

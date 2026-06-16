@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMapPin, FiCrosshair, FiClock, FiDollarSign, FiNavigation, FiSearch } from 'react-icons/fi';
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
-import L from 'leaflet';
+import { divIcon } from 'leaflet';
 import supabase from '../config/supabase';
 import { reverseGeocode, searchLocations } from '../services/geocode';
 import toast from 'react-hot-toast';
@@ -180,13 +180,13 @@ export default function Rides() {
           }} />
           {originCoords && (
             <Marker position={originCoords}
-              icon={L.divIcon({ className: '', html: '<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [20, 20] })}>
+              icon={divIcon({ className: '', html: '<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [20, 20] })}>
               {originAddr && <Popup>{originAddr.short}</Popup>}
             </Marker>
           )}
           {destCoords && (
             <Marker position={destCoords}
-              icon={L.divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">🏁</div>', iconSize: [24, 24] })}>
+              icon={divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">🏁</div>', iconSize: [24, 24] })}>
               {destAddr && <Popup>{destAddr.short}</Popup>}
             </Marker>
           )}

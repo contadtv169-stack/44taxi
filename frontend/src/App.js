@@ -17,6 +17,7 @@ import Earnings from './pages/Earnings';
 import Profile from './pages/Profile';
 import PartnerRegister from './pages/PartnerRegister';
 import Coupons from './pages/Coupons';
+import Settings from './pages/Settings';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -61,6 +62,7 @@ function AppRoutes() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/partner" element={<PartnerRegister />} />
         <Route path="/coupons" element={<Coupons />} />
+        <Route path="/settings" element={<Settings />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
     </Routes>
