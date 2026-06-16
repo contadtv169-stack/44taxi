@@ -1,5 +1,5 @@
--- Run this in Supabase SQL Editor to add notifications table
-
+-- Run this in Supabase SQL Editor
+-- 1. Notifications table
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -40,14 +40,17 @@ DO $$ BEGIN
   END IF;
 END $$;
 
--- Rides RLS policies (table already exists, RLS already enabled)
+-- 2. Add user_id column to rides (direct auth.uid() reference for RLS)
+ALTER TABLE rides ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
+
+-- 3. Rides RLS policies (uses user_id directly - no subquery needed)
+ALTER TABLE rides ENABLE ROW LEVEL SECURITY;
+
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can insert own rides') THEN
     CREATE POLICY "Users can insert own rides"
       ON rides FOR INSERT
-      WITH CHECK (
-        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
-      );
+      WITH CHECK (auth.uid() = user_id);
   END IF;
 END $$;
 
@@ -55,11 +58,7 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can view own rides') THEN
     CREATE POLICY "Users can view own rides"
       ON rides FOR SELECT
-      USING (
-        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
-        OR
-        driver_id IN (SELECT id FROM drivers WHERE firebase_uid = auth.uid()::text)
-      );
+      USING (auth.uid() = user_id OR auth.uid()::text IN (SELECT firebase_uid FROM drivers WHERE id = driver_id));
   END IF;
 END $$;
 
@@ -67,8 +66,6 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can update own rides') THEN
     CREATE POLICY "Users can update own rides"
       ON rides FOR UPDATE
-      USING (
-        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
-      );
+      USING (auth.uid() = user_id);
   END IF;
 END $$;

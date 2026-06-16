@@ -131,6 +131,7 @@ export default function Rides() {
       const { data: ride, error } = await supabase
         .from('rides')
         .insert({
+          user_id: session.user.id,
           passenger_id: profile?.id,
           vehicle_type: vehicleType,
           origin_lat: originCoords[0],
