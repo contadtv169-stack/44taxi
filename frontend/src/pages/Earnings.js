@@ -17,9 +17,8 @@ export default function Earnings() {
   const loadEarnings = async () => {
     try {
       const data = await api.get('/earnings');
-      setEarnings(data.earnings);
+      if (data?.earnings) setEarnings(data.earnings);
     } catch (err) {
-      // Mostrar zeros se nao for motorista
     } finally {
       setLoading(false);
     }
@@ -45,21 +44,21 @@ export default function Earnings() {
 
       <div className="card-yellow card mb-16 text-center" style={{ padding: 32 }}>
         <div className="text-sm font-semibold" style={{ opacity: 0.8 }}>Saldo Total</div>
-        <div className="price-tag" style={{ fontSize: 40, margin: '8px 0' }}>R$ <span>{earnings.total.toFixed(2)}</span></div>
+        <div className="price-tag" style={{ fontSize: 40, margin: '8px 0' }}>R$ <span>{(earnings?.total ?? 0).toFixed(2)}</span></div>
       </div>
 
       <div className="grid-3 mb-16">
         <div className="card text-center">
           <div className="text-xs text-gray">Hoje</div>
-          <div className="font-bold text-lg">R$ {earnings.daily.toFixed(2)}</div>
+          <div className="font-bold text-lg">R$ {(earnings?.daily ?? 0).toFixed(2)}</div>
         </div>
         <div className="card text-center">
           <div className="text-xs text-gray">Semana</div>
-          <div className="font-bold text-lg">R$ {earnings.weekly.toFixed(2)}</div>
+          <div className="font-bold text-lg">R$ {(earnings?.weekly ?? 0).toFixed(2)}</div>
         </div>
         <div className="card text-center">
           <div className="text-xs text-gray">Mes</div>
-          <div className="font-bold text-lg">R$ {earnings.monthly.toFixed(2)}</div>
+          <div className="font-bold text-lg">R$ {(earnings?.monthly ?? 0).toFixed(2)}</div>
         </div>
       </div>
 
