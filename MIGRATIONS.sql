@@ -58,7 +58,7 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can view own rides') THEN
     CREATE POLICY "Users can view own rides"
       ON rides FOR SELECT
-      USING (auth.uid() = user_id OR auth.uid()::text IN (SELECT firebase_uid FROM drivers WHERE id = driver_id));
+      USING (auth.uid() = user_id);
   END IF;
 END $$;
 
