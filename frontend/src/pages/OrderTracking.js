@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiClock, FiMapPin, FiStar, FiPhone } from 'react-icons/fi';
-import { TileLayer, Marker } from 'react-leaflet';
+import { TileLayer } from 'react-leaflet';
 import SafeMap from '../components/SafeMap';
+import MapMarker from '../components/MapMarker';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -92,7 +93,9 @@ export default function OrderTracking() {
         <div className="map-container mb-16" style={{ height: 180 }}>
           <SafeMap center={[order.delivery_lat, order.delivery_lng]} zoom={15} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-            <Marker position={[order.delivery_lat, order.delivery_lng]} />
+            <MapMarker position={[order.delivery_lat, order.delivery_lng]}
+              iconHtml='<div style="width:24px;height:24px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>'
+              iconSize={[24, 24]} />
           </SafeMap>
         </div>
       )}

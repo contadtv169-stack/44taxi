@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPhone, FiMessageCircle, FiXCircle, FiMapPin, FiUser, FiNavigation, FiCheckCircle, FiDownload } from 'react-icons/fi';
-import { TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
-import { divIcon } from 'leaflet';
+import { TileLayer, Polyline, useMap } from 'react-leaflet';
 import supabase from '../config/supabase';
 import { payRide, chargeDriverFee } from '../services/krypt';
 import { reverseGeocode } from '../services/geocode';
 import SafeMap from '../components/SafeMap';
+import MapMarker from '../components/MapMarker';
 import voice from '../components/VoiceService';
 import toast from 'react-hot-toast';
 
@@ -193,18 +193,21 @@ export default function RideTracking() {
         <SafeMap center={origin} zoom={14} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <UserLocation onLocated={setUserCoords} />
-          <Marker position={origin}
-            icon={divIcon({ className: '', html: '<div style="width:24px;height:24px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>', iconSize: [24, 24] })} />
-          <Marker position={destination}
-            icon={divIcon({ className: '', html: '<div style="width:28px;height:28px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:bold">🏁</div>', iconSize: [28, 28] })} />
+          <MapMarker position={origin}
+            iconHtml='<div style="width:24px;height:24px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:12px">📍</div>'
+            iconSize={[24, 24]} />
+          <MapMarker position={destination}
+            iconHtml='<div style="width:28px;height:28px;background:#ef4444;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3);display:flex;align-items:center;justify-content:center;font-size:14px;color:white;font-weight:bold">🏁</div>'
+            iconSize={[28, 28]} />
           {hasRoute && (
             <Polyline positions={[origin, destination]} pathOptions={{
               color: '#2563eb', weight: 4, opacity: 0.7, dashArray: '10, 8',
             }} />
           )}
           {userCoords && (
-            <Marker position={userCoords}
-              icon={divIcon({ className: '', html: '<div style="width:16px;height:16px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [16, 16] })} />
+            <MapMarker position={userCoords}
+              iconHtml='<div style="width:16px;height:16px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>'
+              iconSize={[16, 16]} />
           )}
         </SafeMap>
       </div>

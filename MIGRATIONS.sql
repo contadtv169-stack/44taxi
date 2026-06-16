@@ -39,3 +39,36 @@ DO $$ BEGIN
       USING (auth.uid() = user_id);
   END IF;
 END $$;
+
+-- Rides RLS policies (table already exists, RLS already enabled)
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can insert own rides') THEN
+    CREATE POLICY "Users can insert own rides"
+      ON rides FOR INSERT
+      WITH CHECK (
+        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
+      );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can view own rides') THEN
+    CREATE POLICY "Users can view own rides"
+      ON rides FOR SELECT
+      USING (
+        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
+        OR
+        driver_id IN (SELECT id FROM drivers WHERE firebase_uid = auth.uid()::text)
+      );
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'rides' AND policyname = 'Users can update own rides') THEN
+    CREATE POLICY "Users can update own rides"
+      ON rides FOR UPDATE
+      USING (
+        passenger_id IN (SELECT id FROM user_profiles WHERE firebase_uid = auth.uid()::text)
+      );
+  END IF;
+END $$;

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMap, FiCoffee, FiBell, FiArrowRight, FiChevronRight } from 'react-icons/fi';
-import { TileLayer, Marker, useMap } from 'react-leaflet';
+import { TileLayer, useMap } from 'react-leaflet';
 import SafeMap from '../components/SafeMap';
+import MapMarker from '../components/MapMarker';
 import { useAuth } from '../contexts/AuthContext';
 import Banner from '../components/Banner';
 import Logo from '../components/Logo';
@@ -90,7 +91,9 @@ export default function Home() {
             style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={false}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <MapController />
-            {userLocation && <Marker position={userLocation} />}
+            {userLocation && <MapMarker position={userLocation}
+              iconHtml='<div style="width:20px;height:20px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>'
+              iconSize={[20, 20]} />}
           </SafeMap>
         </div>
         <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
