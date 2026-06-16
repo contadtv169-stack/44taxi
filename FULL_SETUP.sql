@@ -1,4 +1,4 @@
-﻿-- ============================================
+-- ============================================
 -- 44TAXI - SETUP COMPLETO (Execute no Supabase SQL Editor)
 -- https://supabase.com/dashboard/project/wnjpzsxrwwrskakrhfgg/sql/new
 -- ============================================
@@ -100,7 +100,7 @@ CREATE TABLE IF NOT EXISTS food_orders (
   created_at TIMESTAMPTZ DEFAULT NOW(), updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS favorites_addresses (
+CREATE TABLE IF NOT EXISTS favorite_addresses (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID REFERENCES user_profiles(id) ON DELETE CASCADE,
   label VARCHAR(50) NOT NULL, address TEXT NOT NULL,
@@ -150,15 +150,27 @@ CREATE INDEX IF NOT EXISTS idx_support_tickets_user ON support_tickets(user_id);
 
 -- 4. AUTO UPDATE TIMESTAMPS
 CREATE OR REPLACE FUNCTION update_timestamp()
-RETURNS TRIGGER AS  BEGIN NEW.updated_at = NOW(); RETURN NEW; END;  LANGUAGE plpgsql;
+RETURNS TRIGGER AS '
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+' LANGUAGE plpgsql;
 
-CREATE TRIGGER IF NOT EXISTS update_user_profiles_timestamp BEFORE UPDATE ON user_profiles FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_drivers_timestamp BEFORE UPDATE ON drivers FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_delivery_people_timestamp BEFORE UPDATE ON delivery_people FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_restaurants_timestamp BEFORE UPDATE ON restaurants FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_menu_items_timestamp BEFORE UPDATE ON menu_items FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_food_orders_timestamp BEFORE UPDATE ON food_orders FOR EACH ROW EXECUTE FUNCTION update_timestamp();
-CREATE TRIGGER IF NOT EXISTS update_support_tickets_timestamp BEFORE UPDATE ON support_tickets FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_user_profiles_timestamp ON user_profiles;
+CREATE TRIGGER update_user_profiles_timestamp BEFORE UPDATE ON user_profiles FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_drivers_timestamp ON drivers;
+CREATE TRIGGER update_drivers_timestamp BEFORE UPDATE ON drivers FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_delivery_people_timestamp ON delivery_people;
+CREATE TRIGGER update_delivery_people_timestamp BEFORE UPDATE ON delivery_people FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_restaurants_timestamp ON restaurants;
+CREATE TRIGGER update_restaurants_timestamp BEFORE UPDATE ON restaurants FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_menu_items_timestamp ON menu_items;
+CREATE TRIGGER update_menu_items_timestamp BEFORE UPDATE ON menu_items FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_food_orders_timestamp ON food_orders;
+CREATE TRIGGER update_food_orders_timestamp BEFORE UPDATE ON food_orders FOR EACH ROW EXECUTE FUNCTION update_timestamp();
+DROP TRIGGER IF EXISTS update_support_tickets_timestamp ON support_tickets;
+CREATE TRIGGER update_support_tickets_timestamp BEFORE UPDATE ON support_tickets FOR EACH ROW EXECUTE FUNCTION update_timestamp();
 
 -- 5. RLS POLICIES
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -193,9 +205,13 @@ CREATE POLICY "Usuarios podem enviar documentos" ON storage.objects
   FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.role() = 'authenticated');
 
 -- 7. CRIAR ADMIN
-DO  DECLARE uid UUID; BEGIN
+DO $admin$
+DECLARE
+  uid UUID;
+BEGIN
   SELECT id INTO uid FROM auth.users WHERE email = 'admin@44taxi.com';
   IF uid IS NULL THEN
+    RAISE NOTICE 'Usuario admin@44taxi.com nao encontrado no auth. Criando placeholder...';
     INSERT INTO user_profiles (firebase_uid, email, name, role, verified)
     VALUES ('00000000-0000-0000-0000-000000000000', 'admin@44taxi.com', 'Admin', 'admin', true)
     ON CONFLICT (firebase_uid) DO UPDATE SET role = 'admin', verified = true;
@@ -205,7 +221,8 @@ DO  DECLARE uid UUID; BEGIN
     ON CONFLICT (firebase_uid) DO UPDATE SET role = 'admin', verified = true,
       email = 'admin@44taxi.com', name = 'Admin';
   END IF;
-END ;
+END;
+$admin$;
 
 -- Credenciais:
 -- App: https://contadtv169-stack.github.io/44taxi/
