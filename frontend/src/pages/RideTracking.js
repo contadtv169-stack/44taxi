@@ -68,6 +68,12 @@ export default function RideTracking() {
         if ('Notification' in window && Notification.permission === 'granted') {
           new Notification('44Taxi', { body: 'Voce chegou ao seu destino!' });
         }
+        supabase.from('notifications').insert({
+          user_id: rideData.user_id,
+          title: 'Corrida finalizada',
+          body: `Voce chegou a ${destName || rideData.destination_address || 'seu destino'}`,
+          type: 'ride',
+        }).then();
       }
     } catch {
       setRide(null);
@@ -106,6 +112,12 @@ export default function RideTracking() {
     setShowPayment(null);
     setShowReceipt(true);
     toast.success('Pagamento confirmado!');
+    supabase.from('notifications').insert({
+      user_id: ride.user_id,
+      title: 'Pagamento confirmado',
+      body: `Pagamento de R$ ${ride.final_price || ride.estimated_price} recebido com sucesso`,
+      type: 'payment',
+    }).then();
   };
 
   if (loading) return <div className="loading-screen"><div className="loading-spinner" /></div>;

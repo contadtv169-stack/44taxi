@@ -3,6 +3,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import SplashScreen from './components/SplashScreen';
 import Layout from './components/Layout';
 import Login from './pages/auth/Login';
@@ -18,6 +19,7 @@ import Profile from './pages/Profile';
 import PartnerRegister from './pages/PartnerRegister';
 import Coupons from './pages/Coupons';
 import Settings from './pages/Settings';
+import NotificationsPage from './pages/NotificationsPage';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -63,6 +65,7 @@ function AppRoutes() {
         <Route path="/partner" element={<PartnerRegister />} />
         <Route path="/coupons" element={<Coupons />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
     </Routes>
@@ -79,13 +82,15 @@ export default function App() {
   return (
     <HashRouter>
       <AuthProvider>
-        <CartProvider>
-          <Toaster position="top-center" toastOptions={{
-            duration: 3000,
-            style: { borderRadius: 12, padding: '12px 16px', fontSize: 14 },
-          }} />
-          <AppRoutes />
-        </CartProvider>
+        <NotificationProvider>
+          <CartProvider>
+            <Toaster position="top-center" toastOptions={{
+              duration: 3000,
+              style: { borderRadius: 12, padding: '12px 16px', fontSize: 14 },
+            }} />
+            <AppRoutes />
+          </CartProvider>
+        </NotificationProvider>
       </AuthProvider>
     </HashRouter>
   );

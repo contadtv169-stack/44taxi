@@ -171,6 +171,12 @@ export default function PartnerRegister() {
             body: `Parabens! Seu cadastro como ${newRole} foi aprovado!`,
           });
         }
+        supabase.from('notifications').insert({
+          user_id: user.id,
+          title: `Cadastro aprovado!`,
+          body: `Parabens! Seu cadastro como ${newRole} foi aprovado automaticamente`,
+          type: 'partner',
+        }).then();
         toast.success('Parabens! Cadastro aprovado automaticamente!');
         setAutoApproved(true);
         setStep(5);
