@@ -15,10 +15,7 @@ api.interceptors.request.use(async (config) => {
 
 api.interceptors.response.use(
   (response) => response.data,
-  (error) => {
-    const message = error.response?.data?.error || 'Erro de conexao';
-    return Promise.reject(new Error(message));
-  }
+  () => ({ error: 'offline', success: false })
 );
 
 export default api;
