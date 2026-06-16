@@ -10,7 +10,8 @@ const steps = [
   { id: 'data', label: 'Dados' },
   { id: 'documents', label: 'Documentos' },
   { id: 'face', label: 'Verificacao' },
-  { id: 'done', label: 'Pronto' },
+  { id: 'done', label: 'Enviado' },
+  { id: 'approved', label: 'Aprovado' },
 ];
 
 export default function PartnerRegister() {
@@ -23,6 +24,7 @@ export default function PartnerRegister() {
   const [cameraActive, setCameraActive] = useState(false);
   const [faceCaptured, setFaceCaptured] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [autoApproved, setAutoApproved] = useState(false);
   const fileInputRef = useRef(null);
   const [uploadField, setUploadField] = useState('');
 
@@ -115,6 +117,13 @@ export default function PartnerRegister() {
         selfie: form.selfie,
       };
 
+      // Robo de aprovacao automatica
+      const docCount = Object.keys(form.documents).length;
+      const hasFace = !!form.selfie;
+      const autoApprove = (type === 'driver' && docCount >= 1 && hasFace) ||
+                          (type === 'delivery' && docCount >= 1 && hasFace) ||
+                          (type === 'restaurant');
+
       if (type === 'driver') {
         await supabase.from('drivers').insert({
           ...payload,
@@ -124,13 +133,14 @@ export default function PartnerRegister() {
           vehicle_model: form.vehicle_model,
           vehicle_color: form.vehicle_color,
           vehicle_year: form.vehicle_year ? parseInt(form.vehicle_year) : null,
-          status: 'pending',
+          status: autoApprove ? 'approved' : 'pending',
+          onboarding_completed: autoApprove,
         });
       } else if (type === 'delivery') {
         await supabase.from('delivery_people').insert({
           ...payload,
           vehicle_type: form.delivery_vehicle,
-          status: 'pending',
+          status: autoApprove ? 'approved' : 'pending',
         });
       } else if (type === 'restaurant') {
         await supabase.from('restaurants').insert({
@@ -141,20 +151,33 @@ export default function PartnerRegister() {
           name: form.restaurant_name,
           category: form.restaurant_category,
           address_street: form.restaurant_address,
-          status: 'pending',
+          status: 'active',
         });
       }
 
       const roleMap = { driver: 'taxista', delivery: 'entregador', restaurant: 'dono_restaurante' };
+      const newRole = roleMap[type];
       await supabase.from('user_profiles').update({
-        role: roleMap[type],
-        face_verified: !!form.selfie,
+        role: newRole,
+        verified: autoApprove || type === 'restaurant',
+        face_verified: hasFace,
         name: form.name,
         phone: form.phone,
       }).eq('firebase_uid', user?.id);
 
-      toast.success('Cadastro enviado para analise!');
-      setStep(4);
+      if (autoApprove || type === 'restaurant') {
+        if ('Notification' in window && Notification.permission === 'granted') {
+          new Notification('44Taxi', {
+            body: `Parabens! Seu cadastro como ${newRole} foi aprovado!`,
+          });
+        }
+        toast.success('Parabens! Cadastro aprovado automaticamente!');
+        setAutoApproved(true);
+        setStep(5);
+      } else {
+        toast.success('Cadastro enviado para analise!');
+        setStep(4);
+      }
     } catch (err) {
       toast.error(err.message || 'Erro ao enviar cadastro');
     } finally {
@@ -413,7 +436,7 @@ export default function PartnerRegister() {
 
       {step === 4 && (
         <div className="fade-in text-center" style={{ paddingTop: 40 }}>
-          <div style={{ fontSize: 64, marginBottom: 16 }}>🎉</div>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>📋</div>
           <h2 className="font-bold text-xl mb-8">Cadastro Enviado!</h2>
           <p className="text-sm text-gray-dark mb-16">
             Seu cadastro foi enviado para analise. <br />
@@ -423,6 +446,31 @@ export default function PartnerRegister() {
             <FiShield size={24} color="var(--blue)" style={{ marginBottom: 8 }} />
             <p className="text-sm font-semibold">Aprovacao em ate 24 horas</p>
             <p className="text-xs text-gray-dark mt-4">Voce recebera uma notificacao quando for aprovado</p>
+          </div>
+          <button className="btn btn-primary" onClick={() => navigate('/profile')}>
+            Ir para o Perfil
+          </button>
+        </div>
+      )}
+
+      {step === 5 && (
+        <div className="fade-in text-center" style={{ paddingTop: 40 }}>
+          <div style={{ fontSize: 64, marginBottom: 16 }}>🏆</div>
+          <h2 className="font-bold text-xl mb-8">Parabens, voce foi aprovado!</h2>
+          <p className="text-sm text-gray-dark mb-16">
+            Seu cadastro foi analisado e aprovado automaticamente! <br />
+            Agora voce ja pode comecar a receber clientes.
+          </p>
+          <div className="card mb-16" style={{ background: '#f0f7ff', border: '2px solid var(--success)' }}>
+            <div style={{ fontSize: 48, marginBottom: 8 }}>✅</div>
+            <p className="text-sm font-semibold">Documentos verificados com sucesso</p>
+            <p className="text-xs text-gray-dark mt-4">Biometria facial confirmada</p>
+          </div>
+          <div className="card mb-16" style={{ background: 'linear-gradient(135deg, #059669, #2563eb)', color: '#fff', padding: 20 }}>
+            <div className="font-bold text-lg">🚀 Pronto para começar!</div>
+            <p className="text-sm mt-4" style={{ opacity: 0.9 }}>
+              Acesse o app e comece a receber corridas e pedidos agora mesmo!
+            </p>
           </div>
           <button className="btn btn-primary" onClick={() => navigate('/profile')}>
             Ir para o Perfil
