@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiPhone, FiMessageCircle, FiXCircle, FiMapPin, FiUser, FiNavigation, FiCheckCircle, FiDownload } from 'react-icons/fi';
-import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
+import { TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import supabase from '../config/supabase';
 import { payRide, chargeDriverFee } from '../services/krypt';
 import { reverseGeocode } from '../services/geocode';
+import SafeMap from '../components/SafeMap';
 import voice from '../components/VoiceService';
 import toast from 'react-hot-toast';
 
@@ -177,7 +178,7 @@ export default function RideTracking() {
       </div>
 
       <div className="map-container mb-12" style={{ height: 300, borderRadius: 16, overflow: 'hidden' }}>
-        <MapContainer center={origin} zoom={14} style={{ height: '100%', width: '100%' }}>
+        <SafeMap center={origin} zoom={14} style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <UserLocation onLocated={setUserCoords} />
           <Marker position={origin}
@@ -193,7 +194,7 @@ export default function RideTracking() {
             <Marker position={userCoords}
               icon={divIcon({ className: '', html: '<div style="width:16px;height:16px;background:#2563eb;border:3px solid #fff;border-radius:50%;box-shadow:0 2px 8px rgba(0,0,0,0.3)"></div>', iconSize: [16, 16] })} />
           )}
-        </MapContainer>
+        </SafeMap>
       </div>
 
       <div className="card mb-12">

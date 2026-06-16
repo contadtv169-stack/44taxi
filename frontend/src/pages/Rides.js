@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMapPin, FiCrosshair, FiClock, FiDollarSign, FiNavigation, FiSearch } from 'react-icons/fi';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
+import { TileLayer, Marker, useMapEvents, useMap, Popup } from 'react-leaflet';
 import { divIcon } from 'leaflet';
 import supabase from '../config/supabase';
 import { reverseGeocode, searchLocations } from '../services/geocode';
+import SafeMap from '../components/SafeMap';
 import toast from 'react-hot-toast';
 
 function LocationMarker({ onLocationSelect }) {
@@ -169,8 +170,8 @@ export default function Rides() {
   return (
     <div style={{ position: 'relative', height: 'calc(100vh - 140px)', display: 'flex', flexDirection: 'column' }}>
       <div style={{ flex: 1, position: 'relative' }}>
-        <MapContainer center={mapCenter || [-23.5505, -46.6333]} zoom={mapCenter ? 15 : 3}
-          style={{ height: '100%', width: '100%' }} zoomControl={true}>
+        <SafeMap center={mapCenter || [-23.5505, -46.6333]} zoom={mapCenter ? 15 : 3}
+          style={{ height: '100%', width: '100%' }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <CurrentLocation onLocated={(c) => { setOriginCoords(c); setMapCenter(c); }} />
           <LocationMarker onLocationSelect={(pos) => {
@@ -190,7 +191,7 @@ export default function Rides() {
               {destAddr && <Popup>{destAddr.short}</Popup>}
             </Marker>
           )}
-        </MapContainer>
+        </SafeMap>
 
         <button onClick={handleLocateMe} style={{
           position: 'absolute', top: 16, right: 16, zIndex: 1000,

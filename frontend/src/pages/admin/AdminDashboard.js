@@ -55,7 +55,7 @@ function AdminHome() {
   const loadStats = async () => {
     try {
       const data = await api.get('/admin/stats');
-      setStats(data.stats);
+      if (data?.stats) setStats(data.stats);
     } catch {}
   };
 
