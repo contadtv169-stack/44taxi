@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff, FiFace } from 'react-icons/fi';
+import { FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
 import supabase from '../../config/supabase';
 import Logo from '../../components/Logo';
 import { isBiometricSupported, authenticateBiometric, hasBiometricRegistered } from '../../services/webauthn';
@@ -85,7 +85,7 @@ export default function Login() {
                   if (e.name !== 'NotAllowedError') toast.error('Falha na biometria');
                 }
               }}>
-              <FiFace size={18} /> Entrar com Face ID
+              <span style={{ fontSize: 18 }}>😀</span> Entrar com Face ID
             </button>
           )}
           <p className="text-center" style={{ color: 'var(--gray-300)', fontSize: 14 }}>

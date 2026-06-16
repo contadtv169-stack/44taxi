@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield, FiFile, FiFace } from 'react-icons/fi';
+import { FiArrowLeft, FiCamera, FiCheck, FiUpload, FiUser, FiShield, FiFile } from 'react-icons/fi';
 import supabase from '../config/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { isBiometricSupported, registerBiometric, hasBiometricRegistered } from '../services/webauthn';
@@ -475,7 +475,7 @@ export default function PartnerRegister() {
           </div>
           {isBiometricSupported() && !hasBiometricRegistered() && (
             <div className="card mb-16" style={{ border: '2px solid var(--blue)', padding: 20 }}>
-              <FiFace size={32} color="var(--blue)" style={{ marginBottom: 8 }} />
+              <span style={{ fontSize: 32 }}>😀</span>
               <h3 className="font-bold">Desbloqueio Facial</h3>
               <p className="text-xs text-gray-dark mt-4 mb-12">Acesse sua conta rapidamente com Face ID / Biometria</p>
               <button className="btn btn-primary" style={{ width: '100%' }}
@@ -487,7 +487,7 @@ export default function PartnerRegister() {
                     if (e.name !== 'NotAllowedError') toast.error('Erro ao cadastrar biometria');
                   }
                 }}>
-                <FiFace size={16} /> Ativar Desbloqueio Facial
+                <span style={{ fontSize: 16 }}>😀</span> Ativar Desbloqueio Facial
               </button>
             </div>
           )}
