@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiMap, FiCoffee, FiBell, FiArrowRight, FiChevronRight } from 'react-icons/fi';
-import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
+import { TileLayer, Marker, useMap } from 'react-leaflet';
+import SafeMap from '../components/SafeMap';
 import { useAuth } from '../contexts/AuthContext';
 import Banner from '../components/Banner';
 import Logo from '../components/Logo';
@@ -85,12 +86,12 @@ export default function Home() {
       {/* Mini Map */}
       <div className="card mb-16" style={{ overflow: 'hidden', padding: 0 }}>
         <div style={{ height: 180 }}>
-          <MapContainer center={userLocation || [-23.5505, -46.6333]} zoom={userLocation ? 15 : 3}
+          <SafeMap center={userLocation || [-23.5505, -46.6333]} zoom={userLocation ? 15 : 3}
             style={{ height: '100%', width: '100%' }} zoomControl={false} scrollWheelZoom={false}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
             <MapController />
             {userLocation && <Marker position={userLocation} />}
-          </MapContainer>
+          </SafeMap>
         </div>
         <div style={{ padding: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span className="text-sm text-gray-dark">📍 {userLocation ? 'Sua localização' : 'Buscando localização...'}</span>
