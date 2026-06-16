@@ -119,12 +119,14 @@ export default function Profile() {
       <div className="card mb-16">
         <h3 className="font-semibold mb-12">Acesso Rapido</h3>
         {[
-          { icon: '🚗', label: 'Historico de Corridas', path: '/rides' },
+          { icon: '🚗', label: 'Historico de Corridas', path: '/history' },
+          { icon: '🛵', label: 'Modo Motorista', path: '/driver' },
+          { icon: '📦', label: 'Modo Entregador', path: '/delivery' },
           { icon: '🍔', label: 'Meus Pedidos', path: '/food' },
           { icon: '💰', label: 'Meus Ganhos', path: '/earnings' },
           { icon: '🎁', label: 'Cupons', path: '/coupons' },
         ].map((item, i) => (
-          <div key={i} className="flex items-center justify-between" style={{ padding: '12px 0', cursor: 'pointer', borderBottom: i < 2 ? '1px solid var(--gray-100)' : 'none' }} onClick={() => navigate(item.path)}>
+          <div key={i} className="flex items-center justify-between"             style={{ padding: '12px 0', cursor: 'pointer', borderBottom: i < 5 ? '1px solid var(--gray-100)' : 'none' }} onClick={() => navigate(item.path)}>
             <div className="flex items-center gap-12">
               <span>{item.icon}</span>
               <span className="font-medium">{item.label}</span>

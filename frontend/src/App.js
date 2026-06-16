@@ -20,6 +20,9 @@ import PartnerRegister from './pages/PartnerRegister';
 import Coupons from './pages/Coupons';
 import Settings from './pages/Settings';
 import NotificationsPage from './pages/NotificationsPage';
+import History from './pages/History';
+import DriverDashboard from './pages/DriverDashboard';
+import DeliveryDashboard from './pages/DeliveryDashboard';
 import AdminLogin from './pages/admin/AdminLogin';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -66,6 +69,9 @@ function AppRoutes() {
         <Route path="/coupons" element={<Coupons />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/history" element={<History />} />
+        <Route path="/driver" element={<DriverDashboard />} />
+        <Route path="/delivery" element={<DeliveryDashboard />} />
       </Route>
       <Route path="*" element={<Navigate to={user ? "/home" : "/login"} />} />
     </Routes>
