@@ -4,6 +4,7 @@ import { MapContainer } from 'react-leaflet';
 export default function SafeMap({ center, zoom, style, children, ...props }) {
   const ref = useRef(null);
   const [ready, setReady] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -25,8 +26,14 @@ export default function SafeMap({ center, zoom, style, children, ...props }) {
   return (
     <div ref={ref} style={{ ...style, position: 'relative' }}>
       {ready && (
-        <MapContainer center={center} zoom={zoom} style={{ height: '100%', width: '100%' }} {...props}>
-          {children}
+        <MapContainer
+          center={center}
+          zoom={zoom}
+          style={{ height: '100%', width: '100%' }}
+          whenReady={() => setMapReady(true)}
+          {...props}
+        >
+          {mapReady ? children : null}
         </MapContainer>
       )}
     </div>

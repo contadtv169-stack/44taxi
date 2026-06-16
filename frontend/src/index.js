@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import 'leaflet/dist/leaflet.css';
+import './components/LeafletSafeInit'; // patches DomUtil to suppress _leaflet_pos errors
 import './styles/global.css';
 
 // Capture global errors to debug white screen
