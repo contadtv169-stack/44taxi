@@ -241,17 +241,27 @@ export default function RideTracking() {
       {ride.status === 'completed' && !showPayment && !showReceipt && (
         <div className="card mb-12">
           <h3 className="font-bold mb-12">Forma de Pagamento</h3>
-          <div className="flex gap-8">
-            <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handlePay('pix')} disabled={paying}>
-              <span style={{ fontSize: 18 }}>💳</span> PIX
+          {ride.payment_method === 'cash' ? (
+            <button className="btn btn-success" style={{ width: '100%' }} onClick={() => handlePay('cash')}>
+              💵 Pagar com Dinheiro (no final)
             </button>
-            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('card')} disabled={paying}>
-              💳 Cartao
+          ) : ride.payment_method === 'pix' ? (
+            <button className="btn btn-secondary" style={{ width: '100%' }} onClick={() => handlePay('pix')} disabled={paying}>
+              💳 Pagar com PIX {paying ? '...' : ''}
             </button>
-            <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('cash')} disabled={paying}>
-              💵 Dinheiro
-            </button>
-          </div>
+          ) : (
+            <div className="flex gap-8">
+              <button className="btn btn-sm btn-secondary" style={{ flex: 1 }} onClick={() => handlePay('pix')} disabled={paying}>
+                <span style={{ fontSize: 18 }}>💳</span> PIX
+              </button>
+              <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('card')} disabled={paying}>
+                💳 Cartao
+              </button>
+              <button className="btn btn-sm btn-outline" style={{ flex: 1 }} onClick={() => handlePay('cash')} disabled={paying}>
+                💵 Dinheiro
+              </button>
+            </div>
+          )}
           {paying && <p className="text-xs text-gray text-center mt-8">Processando...</p>}
         </div>
       )}

@@ -43,6 +43,7 @@ export default function Rides() {
   const [searchResults, setSearchResults] = useState([]);
   const [searching, setSearching] = useState('');
   const [showOriginSearch, setShowOriginSearch] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('pix');
   const searchTimeout = useRef(null);
   const destRef = useRef(null);
 
@@ -142,6 +143,7 @@ export default function Rides() {
           destination_address: dest || 'Destino',
           distance_km: estimate.distanceKm,
           estimated_price: estimate.price,
+          payment_method: paymentMethod,
           status: 'pending',
         })
         .select()
@@ -273,6 +275,22 @@ export default function Rides() {
               <span className="price-tag" style={{ fontSize: 22, marginLeft: 12 }}>R$ <span>{estimate.price}</span></span>
             </div>
             <span className="text-xs text-gray">~{Math.round(estimate.distanceKm * 3 + 5)} min</span>
+          </div>
+        )}
+
+        {estimate && (
+          <div className="flex gap-8 mb-12">
+            {[
+              { id: 'pix', label: 'PIX', icon: '💳' },
+              { id: 'card', label: 'Cartao', icon: '💳' },
+              { id: 'cash', label: 'Dinheiro', icon: '💵' },
+            ].map(m => (
+              <button key={m.id} className={`btn btn-sm ${paymentMethod === m.id ? 'btn-primary' : 'btn-outline'}`}
+                style={{ flex: 1, fontSize: 12 }}
+                onClick={() => setPaymentMethod(m.id)}>
+                {m.icon} {m.label}
+              </button>
+            ))}
           </div>
         )}
 
