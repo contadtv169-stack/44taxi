@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { FiArrowLeft, FiShield, FiStar, FiSettings, FiHelpCircle, FiInfo, FiCheck, FiCamera, FiBell, FiMapPin, FiMoon, FiGlobe, FiMail, FiPhone, FiLock, FiAlertTriangle, FiChevronRight } from 'react-icons/fi';
 import { useAuth } from '../contexts/AuthContext';
 import supabase from '../config/supabase';
+import { isBiometricSupported, registerBiometric, hasBiometricRegistered, removeBiometric } from '../services/webauthn';
 import toast from 'react-hot-toast';
 
 const SECTIONS = [
